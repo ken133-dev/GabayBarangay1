@@ -60,3 +60,8 @@ nul
 **/workbox-*.js
 **/public/sw.js
 **/public/workbox-*.js
+
+# AI files
+.claude/
+CLAUDE.md
+GEMINI.md
