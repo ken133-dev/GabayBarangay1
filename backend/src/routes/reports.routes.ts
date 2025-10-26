@@ -3,7 +3,8 @@ import {
   getHealthReport,
   getDaycareReport,
   getSKReport,
-  getCrossModuleAnalytics
+  getCrossModuleAnalytics,
+  getHealthStats
 } from '../controllers/reports.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -15,6 +16,13 @@ router.get(
   authenticate,
   authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'),
   getHealthReport
+);
+
+router.get(
+  '/health/stats',
+  authenticate,
+  authorize('BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'),
+  getHealthStats
 );
 
 router.get(

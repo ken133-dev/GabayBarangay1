@@ -28,24 +28,15 @@ interface Vaccination {
 export default function VaccinationTracking() {
   const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [schedule, setSchedule] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState('');
   const [filterPatient, setFilterPatient] = useState('all');
-  const [formData, setFormData] = useState({
-    vaccineName: '',
-    vaccineType: '',
-    dosage: '',
-    dateGiven: '',
-    nextDueDate: '',
-    administeredBy: '',
-    batchNumber: '',
-    notes: ''
-  });
+  const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
     fetchPatients();
     fetchVaccinations();
+    fetchSchedule();
   }, []);
 
   const fetchPatients = async () => {
@@ -59,59 +50,25 @@ export default function VaccinationTracking() {
 
   const fetchVaccinations = async () => {
     try {
-      const response = await api.get('/health/vaccinations');
-      setVaccinations(response.data.vaccinations || []);
+      const response = await api.get('/health/immunization-records');
+      setVaccinations(response.data.immunizationRecords || []);
     } catch (error) {
-      toast.error('Failed to fetch vaccinations');
+      toast.error('Failed to fetch immunization records');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedPatient) {
-      toast.error('Please select a patient');
-      return;
-    }
-
-    if (!formData.vaccineName || !formData.vaccineType || !formData.dateGiven) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
+  const fetchSchedule = async () => {
     try {
-      await api.post('/health/vaccinations', {
-        patientId: selectedPatient,
-        vaccineName: formData.vaccineName,
-        vaccineType: formData.vaccineType,
-        dosage: formData.dosage,
-        dateGiven: formData.dateGiven,
-        nextDueDate: formData.nextDueDate || null,
-        administeredBy: formData.administeredBy,
-        batchNumber: formData.batchNumber,
-        notes: formData.notes
-      });
-
-      toast.success('Vaccination record added successfully!');
-      setShowDialog(false);
-      setFormData({
-        vaccineName: '',
-        vaccineType: '',
-        dosage: '',
-        dateGiven: '',
-        nextDueDate: '',
-        administeredBy: '',
-        batchNumber: '',
-        notes: ''
-      });
-      setSelectedPatient('');
-      fetchVaccinations();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to add vaccination record');
+      const response = await api.get('/health/immunization-schedule');
+      setSchedule(response.data.schedule || []);
+    } catch (error) {
+      console.error('Failed to fetch immunization schedule:', error);
     }
   };
+
+
 
   const getVaccinationStatus = (vaccination: Vaccination) => {
     if (!vaccination.nextDueDate) return 'completed';
@@ -137,9 +94,11 @@ export default function VaccinationTracking() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const filteredVaccinations = filterPatient && filterPatient !== 'all'
-    ? vaccinations.filter(v => v.patientId === filterPatient)
-    : vaccinations;
+  const filteredVaccinations = vaccinations.filter(v => {
+    const patientMatch = filterPatient === 'all' || v.patientId === filterPatient;
+    const statusMatch = filterStatus === 'all' || getVaccinationStatus(v) === filterStatus;
+    return patientMatch && statusMatch;
+  });
 
   const upcomingCount = vaccinations.filter(v => {
     const status = getVaccinationStatus(v);
@@ -152,10 +111,10 @@ export default function VaccinationTracking() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Vaccination Tracking</h1>
-            <p className="text-gray-600 mt-1">Immunization schedule management</p>
+            <p className="text-gray-600 mt-1">Monitor immunization schedules and due dates</p>
           </div>
-          <Button onClick={() => setShowDialog(true)}>
-            Record Vaccination
+          <Button onClick={() => window.location.href = '/health/records'}>
+            Add Immunization Record
           </Button>
         </div>
 
@@ -189,11 +148,10 @@ export default function VaccinationTracking() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Vaccination Records</CardTitle>
+              <CardTitle>Immunization Schedule Tracking</CardTitle>
               <div className="flex gap-2 items-center">
-                <span className="text-sm text-gray-600">Filter by patient:</span>
                 <Select value={filterPatient} onValueChange={setFilterPatient}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="All patients" />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,6 +163,17 @@ export default function VaccinationTracking() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="All status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All status</SelectItem>
+                    <SelectItem value="due-soon">Due Soon</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -213,8 +182,8 @@ export default function VaccinationTracking() {
               <p>Loading vaccinations...</p>
             ) : filteredVaccinations.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No vaccination records yet.</p>
-                <p className="text-sm text-gray-500 mt-2">Click "Record Vaccination" to add the first record.</p>
+                <p className="text-muted-foreground">No immunization records match the filters.</p>
+                <p className="text-sm text-gray-500 mt-2">Try adjusting the filters or add new immunization records.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -263,130 +232,7 @@ export default function VaccinationTracking() {
           </CardContent>
         </Card>
 
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Record Vaccination</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Select Patient *</label>
-                <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a patient..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map((patient) => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {patient.firstName} {patient.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Vaccine Name *</label>
-                  <Input
-                    value={formData.vaccineName}
-                    onChange={(e) => setFormData({...formData, vaccineName: e.target.value})}
-                    placeholder="e.g., Measles-Mumps-Rubella (MMR)"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Vaccine Type *</label>
-                  <Select
-                    value={formData.vaccineType}
-                    onValueChange={(value) => setFormData({...formData, vaccineType: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BCG">BCG</SelectItem>
-                      <SelectItem value="Hepatitis B">Hepatitis B</SelectItem>
-                      <SelectItem value="DPT">DPT</SelectItem>
-                      <SelectItem value="OPV">OPV (Polio)</SelectItem>
-                      <SelectItem value="MMR">MMR</SelectItem>
-                      <SelectItem value="Influenza">Influenza</SelectItem>
-                      <SelectItem value="COVID-19">COVID-19</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Dosage</label>
-                  <Input
-                    value={formData.dosage}
-                    onChange={(e) => setFormData({...formData, dosage: e.target.value})}
-                    placeholder="e.g., 0.5ml"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Batch Number</label>
-                  <Input
-                    value={formData.batchNumber}
-                    onChange={(e) => setFormData({...formData, batchNumber: e.target.value})}
-                    placeholder="Enter batch number"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Date Given *</label>
-                  <Input
-                    type="date"
-                    value={formData.dateGiven}
-                    onChange={(e) => setFormData({...formData, dateGiven: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Next Due Date</label>
-                  <Input
-                    type="date"
-                    value={formData.nextDueDate}
-                    onChange={(e) => setFormData({...formData, nextDueDate: e.target.value})}
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Administered By</label>
-                <Input
-                  value={formData.administeredBy}
-                  onChange={(e) => setFormData({...formData, administeredBy: e.target.value})}
-                  placeholder="Enter healthcare provider name"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Additional Notes</label>
-                <textarea
-                  className="w-full p-2 border rounded-md"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Any reactions, side effects, or additional observations"
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Save Vaccination Record</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

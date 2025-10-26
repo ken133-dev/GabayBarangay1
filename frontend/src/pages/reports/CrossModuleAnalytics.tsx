@@ -56,48 +56,7 @@ export default function CrossModuleAnalytics() {
       setAnalytics(response.data.analytics);
     } catch (error) {
       console.error('Failed to fetch cross-module analytics:', error);
-      // Provide fallback data
-      const fallbackAnalytics: CrossModuleAnalytics = {
-        overview: {
-          totalUsers: 156,
-          activeServices: 3,
-          totalEngagement: 1247,
-          systemUtilization: 78
-        },
-        serviceUsage: {
-          health: { users: 89, activities: 234 },
-          daycare: { users: 34, activities: 156 },
-          sk: { users: 67, activities: 89 }
-        },
-        userEngagement: {
-          byRole: [
-            { role: 'PARENT_RESIDENT', count: 45, engagement: 85 },
-            { role: 'PATIENT', count: 34, engagement: 72 },
-            { role: 'BHW', count: 8, engagement: 95 },
-            { role: 'DAYCARE_STAFF', count: 6, engagement: 88 },
-            { role: 'SK_OFFICER', count: 12, engagement: 91 }
-          ],
-          monthlyTrends: [
-            { month: 'Jan', health: 45, daycare: 23, sk: 18 },
-            { month: 'Feb', health: 52, daycare: 28, sk: 22 },
-            { month: 'Mar', health: 48, daycare: 25, sk: 19 },
-            { month: 'Apr', health: 61, daycare: 32, sk: 28 },
-            { month: 'May', health: 55, daycare: 29, sk: 25 },
-            { month: 'Jun', health: 67, daycare: 34, sk: 31 }
-          ]
-        },
-        crossService: {
-          multiServiceUsers: 23,
-          serviceOverlap: [
-            { services: 'Health + Daycare', users: 15 },
-            { services: 'Health + SK', users: 8 },
-            { services: 'Daycare + SK', users: 6 },
-            { services: 'All Services', users: 4 }
-          ],
-          engagementScore: 82
-        }
-      };
-      setAnalytics(fallbackAnalytics);
+      toast.error('Failed to load cross-module analytics');
     } finally {
       setLoading(false);
     }

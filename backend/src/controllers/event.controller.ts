@@ -7,16 +7,30 @@ import prisma from '../utils/prisma';
 export const createEvent = async (req: AuthRequest, res: Response) => {
   try {
     const createdBy = req.user!.userId;
-    const eventData = req.body;
+    const { eventDate, startTime, endTime, ...eventData } = req.body;
+
+    // Combine date and time properly
+    const eventDateTime = new Date(eventDate);
+    const [startHour, startMinute] = startTime.split(':');
+    const startDateTime = new Date(eventDateTime);
+    startDateTime.setHours(parseInt(startHour), parseInt(startMinute), 0, 0);
+
+    let endDateTime = null;
+    if (endTime) {
+      const [endHour, endMinute] = endTime.split(':');
+      endDateTime = new Date(eventDateTime);
+      endDateTime.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
+    }
 
     const event = await prisma.event.create({
       data: {
         ...eventData,
-        eventDate: new Date(eventData.eventDate),
-        startTime: new Date(eventData.startTime),
-        endTime: eventData.endTime ? new Date(eventData.endTime) : null,
+        eventDate: eventDateTime,
+        startTime: startDateTime,
+        endTime: endDateTime,
         createdBy,
-        status: eventData.status || 'DRAFT'
+        status: eventData.status || 'DRAFT',
+        publishedAt: eventData.status === 'PUBLISHED' ? new Date() : null
       }
     });
 
@@ -30,7 +44,8 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
 export const getAllEvents = async (req: AuthRequest, res: Response) => {
   try {
     const { status, category } = req.query;
-    const userRole = req.user?.role;
+    const userRoles = req.user?.roles || [];
+    const userRole = userRoles[0] || 'VISITOR';
 
     // SK Officers and Admin can see all events, others only see published
     const where: any = {};
@@ -315,7 +330,7 @@ export const getEventRegistrations = async (req: AuthRequest, res: Response) => 
             lastName: true,
             email: true,
             contactNumber: true,
-            role: true
+            roles: true
           }
         }
       },
@@ -445,7 +460,7 @@ export const getEventAttendance = async (req: AuthRequest, res: Response) => {
             firstName: true,
             lastName: true,
             email: true,
-            role: true
+            roles: true
           }
         });
         return {
@@ -497,13 +512,14 @@ export const getEventAnalytics = async (req: AuthRequest, res: Response) => {
     const userIds = event.registrations.map(r => r.userId);
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, role: true }
+      select: { id: true, roles: true }
     });
 
     // Role breakdown
     const roleBreakdown = users.reduce((acc: any, user) => {
-      const role = user.role;
-      acc[role] = (acc[role] || 0) + 1;
+      user.roles.forEach(role => {
+        acc[role] = (acc[role] || 0) + 1;
+      });
       return acc;
     }, {});
 

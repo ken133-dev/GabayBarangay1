@@ -20,8 +20,11 @@ export default function HealthDashboard() {
       navigate('/login');
       return;
     }
+    // Get user roles (support both single role and multi-role)
+    const userRoles = user.roles || (user.role ? [user.role] : []);
+    
     // Allow admin users to access health dashboard
-    if (!['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(user.role)) {
+    if (!userRoles.some(role => ['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))) {
       navigate('/dashboard');
       return;
     }
@@ -39,11 +42,11 @@ export default function HealthDashboard() {
       });
       
       // Convert monthly trend to chart data
-      const monthlyTrend = report?.appointments?.monthlyTrend || {};
-      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
-        name: month,
-        appointments: count,
-        patients: Math.floor((count as number) * 0.8) // Estimate patients from appointments
+      const monthlyTrend = report?.appointments?.monthlyTrends || [];
+      const chartData = monthlyTrend.map((item: any) => ({
+        name: item.month,
+        appointments: item.count,
+        patients: report?.summary?.totalPatients || 0
       }));
       setChartData(chartData);
     } catch (error) {

@@ -12,6 +12,7 @@ import notificationRoutes from './routes/notification.routes';
 import reportsRoutes from './routes/reports.routes';
 import publicRoutes from './routes/public.routes';
 import adminRoutes from './routes/admin.routes';
+import skRoutes from './routes/sk.routes';
 
 dotenv.config();
 
@@ -23,7 +24,8 @@ app.use(helmet());
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:5173',
-    'http://localhost:5174'
+    'http://localhost:5174',
+    'http://localhost:4173' // Vite preview server
   ],
   credentials: true
 }));
@@ -33,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'TheyCare Portal API is running' });
+  res.json({ status: 'OK', message: 'Gabay Barangay API is running' });
 });
 
 // Routes
@@ -46,6 +48,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sk', skRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

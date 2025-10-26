@@ -10,8 +10,16 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 export default function SKDashboard() {
   const [user, setUser] = useState<User | null>(null);
-  const [stats, setStats] = useState<any>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    totalEvents: number;
+    upcomingEvents: number;
+    totalParticipants: number;
+  } | null>(null);
+  const [chartData, setChartData] = useState<{
+    name: string;
+    events: number;
+    participants: number;
+  }[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -22,7 +30,10 @@ export default function SKDashboard() {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (!['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(parsedUser.role)) {
+    // Get user roles (support both single role and multi-role)
+    const userRoles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+    
+    if (!userRoles.some((role: string) => ['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))) {
       navigate('/dashboard');
       return;
     }
@@ -41,11 +52,11 @@ export default function SKDashboard() {
       });
       
       // Convert monthly trend to chart data
-      const monthlyTrend = report?.events?.monthlyTrend || {};
-      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
-        name: month,
-        events: count,
-        participants: Math.floor((count as number) * 15) // Estimate participants from events
+      const monthlyTrend = report?.participation?.registrationVsAttendance || [];
+      const chartData = monthlyTrend.map((item: { month: string; registrations: number }) => ({
+        name: item.month,
+        events: report?.summary?.totalEvents || 0,
+        participants: item.registrations || 0
       }));
       setChartData(chartData);
     } catch (error) {

@@ -270,7 +270,7 @@ export const sendBroadcast = async (req: AuthRequest, res: Response) => {
     // Get all users matching target roles
     const where: any = {};
     if (targetRoles && targetRoles.length > 0) {
-      where.role = { in: targetRoles };
+      where.roles = { hasSome: targetRoles };
     }
     where.status = 'ACTIVE'; // Only send to active users
 
@@ -319,7 +319,7 @@ export const getBroadcastHistory = async (req: AuthRequest, res: Response) => {
             id: true,
             firstName: true,
             lastName: true,
-            role: true
+            roles: true
           }
         }
       },

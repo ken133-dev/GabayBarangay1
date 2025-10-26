@@ -17,6 +17,7 @@ interface Event {
   location?: string;
   capacity?: number;
   registeredCount?: number;
+  status?: string;
 }
 
 interface Registration {
@@ -46,7 +47,8 @@ export default function EventRegistration() {
   });
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isStaff = ['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'].includes(user.role);
+  const userRoles = user.roles || [user.role]; // Support both single role and multi-role
+  const isStaff = userRoles.some((role: string) => ['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'].includes(role));
 
   useEffect(() => {
     fetchEvents();
@@ -83,7 +85,7 @@ export default function EventRegistration() {
 
   const fetchRegistrations = async () => {
     try {
-      const response = await api.get('/events/registrations');
+      const response = await api.get('/events/registrations/my');
       setRegistrations(response.data.registrations || []);
     } catch (error) {
       toast.error('Failed to fetch registrations');
@@ -125,8 +127,8 @@ export default function EventRegistration() {
         contactNumber: '',
         notes: ''
       });
-      fetchEvents();
-      fetchRegistrations();
+      // Refresh both events and registrations to update UI
+      await Promise.all([fetchEvents(), fetchRegistrations()]);
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Registration failed');
     }
@@ -176,7 +178,7 @@ export default function EventRegistration() {
     return new Date(eventDate) < new Date();
   };
 
-  const myRegistrations = registrations.filter(r => r.userId === user.userId);
+  const myRegistrations = registrations.filter(r => r.userId === user.id || r.userId === user.userId);
   const filteredRegistrations = filterEvent
     ? registrations.filter(r => r.eventId === filterEvent)
     : registrations;
@@ -250,14 +252,16 @@ export default function EventRegistration() {
                   const isRegistered = myRegistrations.some(r => r.eventId === event.id);
                   const isFull = isEventFull(event);
                   const isPast = isEventPast(event.eventDate);
+                  const isCancelled = event.status === 'CANCELLED';
 
                   return (
                     <Card key={event.id} className="border">
                       <CardContent className="pt-6">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-semibold">{event.title}</h3>
-                          {isPast && <Badge variant="secondary">Past</Badge>}
-                          {isFull && !isPast && <Badge variant="destructive">Full</Badge>}
+                          {isCancelled && <Badge variant="destructive">Cancelled</Badge>}
+                          {isPast && !isCancelled && <Badge variant="secondary">Past</Badge>}
+                          {isFull && !isPast && !isCancelled && <Badge variant="destructive">Full</Badge>}
                         </div>
                         <p className="text-sm text-gray-600 mb-2">
                           {new Date(event.eventDate).toLocaleString()}
@@ -284,13 +288,13 @@ export default function EventRegistration() {
                         ) : (
                           <Button
                             className="w-full"
-                            disabled={isFull || isPast}
+                            disabled={isFull || isPast || isCancelled}
                             onClick={() => {
                               setSelectedEvent(event);
                               setShowRegisterDialog(true);
                             }}
                           >
-                            {isPast ? 'Event Ended' : isFull ? 'Event Full' : 'Register Now'}
+                            {isCancelled ? 'Event Cancelled' : isPast ? 'Event Ended' : isFull ? 'Event Full' : 'Register Now'}
                           </Button>
                         )}
                       </CardContent>

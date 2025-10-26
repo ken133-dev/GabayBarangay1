@@ -500,7 +500,8 @@ export const createLearningMaterial = async (req: AuthRequest, res: Response) =>
 export const getLearningMaterials = async (req: AuthRequest, res: Response) => {
   try {
     const { category } = req.query;
-    const userRole = req.user!.role;
+    const userRoles = req.user!.roles || [];
+    const userRole = userRoles[0] || 'VISITOR';
 
     // Parents can only see public materials
     const where: any = {};

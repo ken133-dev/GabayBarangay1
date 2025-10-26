@@ -23,7 +23,6 @@ enum UserRole {
   SK_OFFICER
   SK_CHAIRMAN
   PARENT_RESIDENT
-  PATIENT
   VISITOR
 }
 
@@ -88,13 +87,15 @@ model User {
   middleName    String?
   contactNumber String?
   address       String?
-  role          UserRole      @default(VISITOR)
+  roles         UserRole[]    @default([VISITOR])
   status        AccountStatus @default(PENDING)
+  otpEnabled    Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   // Relations
   patients              Patient[]
+  guardianPatients      Patient[]            @relation("GuardianUser")
   daycareRegistrations  DaycareRegistration[]
   eventRegistrations    EventRegistration[]
   notifications         Notification[]
@@ -122,14 +123,23 @@ model Patient {
   contactNumber    String
   emergencyContact String
   guardianName     String?
+  guardianUserId   String?
+  guardian         User?     @relation("GuardianUser", fields: [guardianUserId], references: [id])
+  
+  // Immunization-specific fields
+  birthWeight      Float?
+  birthLength      Float?
+  motherName       String?
+  fatherName       String?
+  placeOfBirth     String?
+  
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  appointments     Appointment[]
-  healthRecords    HealthRecord[]
-  vaccinations     Vaccination[]
-  certificates     Certificate[]
+  appointments        Appointment[]
+  immunizationRecords ImmunizationRecord[]
+  certificates        Certificate[]
 
   @@map("patients")
 }
@@ -150,38 +160,9 @@ model Appointment {
   @@map("appointments")
 }
 
-model HealthRecord {
-  id          String   @id @default(cuid())
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  recordDate  DateTime
-  diagnosis   String?
-  treatment   String?
-  medications String?
-  vitalSigns Json?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  @@map("health_records")
-}
 
-model Vaccination {
-  id             String   @id @default(cuid())
-  patientId      String
-  patient        Patient  @relation(fields: [patientId], references: [id])
-  vaccineName    String
-  vaccineType    String
-  dosage         String?
-  dateGiven      DateTime
-  nextDueDate    DateTime?
-  administeredBy String
-  batchNumber    String?
-  notes          String?
-  createdAt      DateTime @default(now())
 
-  @@map("vaccinations")
-}
 
 // ========== DAYCARE MANAGEMENT MODULE ==========
 
@@ -337,6 +318,60 @@ model EventAttendance {
   @@map("event_attendance")
 }
 
+// ========== IMMUNIZATION MANAGEMENT ==========
+
+model ImmunizationRecord {
+  id                   String   @id @default(cuid())
+  patientId            String
+  patient              Patient  @relation(fields: [patientId], references: [id])
+  
+  // Vaccine Information
+  vaccineName          String
+  vaccineType          String
+  manufacturer         String?
+  lotNumber            String?
+  dosage               String?
+  
+  // Administration Details
+  dateGiven            DateTime
+  ageAtVaccination     String?  // e.g., "2 months", "1 year"
+  siteOfAdministration String?  // e.g., "Left thigh", "Right arm"
+  administeredBy       String
+  
+  // Schedule Tracking
+  doseNumber           Int?     // 1st dose, 2nd dose, etc.
+  nextDueDate          DateTime?
+  isCompleted          Boolean  @default(false)
+  
+  // Safety & Tracking
+  batchNumber          String?
+  expirationDate       DateTime?
+  adverseReactions     String?
+  
+  // Record Keeping
+  recordedBy           String
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("immunization_records")
+}
+
+model ImmunizationSchedule {
+  id              String   @id @default(cuid())
+  vaccineName     String
+  vaccineType     String
+  recommendedAge  String   // e.g., "Birth", "2 months", "4 months"
+  ageInDays       Int      // For precise calculation
+  doseNumber      Int
+  isRequired      Boolean  @default(true)
+  description     String?
+  createdAt       DateTime @default(now())
+
+  @@unique([vaccineName, doseNumber, ageInDays])
+  @@map("immunization_schedules")
+}
+
 // ========== CERTIFICATE GENERATION ==========
 
 model Certificate {
@@ -424,6 +459,8 @@ model Announcement {
 
   @@map("announcements")
 }
+
+
 
 // ========== PUBLIC CONTENT MANAGEMENT ==========
 

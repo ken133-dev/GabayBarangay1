@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/index';
@@ -14,6 +15,12 @@ import {
   Settings,
   FileText,
   ArrowRight,
+  Shield,
+  UserCheck,
+  Crown,
+  Stethoscope,
+  GraduationCap,
+  Trophy,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -23,71 +30,120 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     
-    // Redirect role-specific users to their specialized dashboards
-    if ([UserRole.BHW, UserRole.BHW_COORDINATOR].includes(user.role)) {
-      navigate('/health');
-      return;
+    // Get user roles (support both single role and multi-role)
+    const userRoles = user.roles || (user.role ? [user.role] : []);
+    
+    // Only redirect if user has exactly ONE role (single-role users)
+    if (userRoles.length === 1) {
+      const singleRole = userRoles[0];
+      if ([UserRole.BHW, UserRole.BHW_COORDINATOR].includes(singleRole)) {
+        navigate('/health');
+        return;
+      }
+      if ([UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER].includes(singleRole)) {
+        navigate('/daycare');
+        return;
+      }
+      if ([UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN].includes(singleRole)) {
+        navigate('/sk');
+        return;
+      }
+      if ([UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN].includes(singleRole)) {
+        navigate('/admin');
+        return;
+      }
     }
-    if ([UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER].includes(user.role)) {
-      navigate('/daycare');
-      return;
-    }
-    if ([UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN].includes(user.role)) {
-      navigate('/sk');
-      return;
-    }
-    if ([UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN].includes(user.role)) {
-      navigate('/admin');
-      return;
-    }
+    // Multi-role users stay on the main dashboard
   }, [user, navigate]);
 
   if (!user) {
     return null;
   }
 
-  // For regular users (PARENT_RESIDENT, PATIENT, VISITOR)
+  // Get user roles (support both single role and multi-role)
+  const userRoles = user.roles || (user.role ? [user.role] : []);
+  
+  // Get role display info
+  const getRoleInfo = (role: UserRole) => {
+    const roleConfig = {
+      [UserRole.SYSTEM_ADMIN]: { label: 'System Admin', variant: 'destructive' as const, icon: Shield },
+      [UserRole.BARANGAY_CAPTAIN]: { label: 'Barangay Captain', variant: 'default' as const, icon: Crown },
+      [UserRole.BARANGAY_OFFICIAL]: { label: 'Barangay Official', variant: 'secondary' as const, icon: UserCheck },
+      [UserRole.BHW]: { label: 'BHW', variant: 'outline' as const, icon: Stethoscope },
+      [UserRole.BHW_COORDINATOR]: { label: 'BHW Coordinator', variant: 'outline' as const, icon: Stethoscope },
+      [UserRole.DAYCARE_STAFF]: { label: 'Daycare Staff', variant: 'outline' as const, icon: GraduationCap },
+      [UserRole.DAYCARE_TEACHER]: { label: 'Daycare Teacher', variant: 'outline' as const, icon: GraduationCap },
+      [UserRole.SK_OFFICER]: { label: 'SK Officer', variant: 'outline' as const, icon: Trophy },
+      [UserRole.SK_CHAIRMAN]: { label: 'SK Chairman', variant: 'outline' as const, icon: Trophy },
+      [UserRole.PARENT_RESIDENT]: { label: 'Parent/Resident', variant: 'secondary' as const, icon: Users },
+      [UserRole.PATIENT]: { label: 'Patient', variant: 'secondary' as const, icon: Heart },
+      [UserRole.VISITOR]: { label: 'Visitor', variant: 'outline' as const, icon: Users },
+    };
+    return roleConfig[role] || { label: role.replace('_', ' '), variant: 'outline' as const, icon: Users };
+  };
+  
+  // Multi-role dashboard actions based on user's roles
   const quickActions = [
+    // Health Services
     {
-      title: 'Health Services',
+      title: 'Health Dashboard',
+      description: 'Manage patients and appointments',
+      icon: Heart,
+      path: '/health',
+      available: userRoles.some(role => [UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN].includes(role))
+    },
+    // Daycare Services
+    {
+      title: 'Daycare Dashboard',
+      description: 'Manage student enrollment and attendance',
+      icon: Baby,
+      path: '/daycare',
+      available: userRoles.some(role => [UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN].includes(role))
+    },
+    // SK Services
+    {
+      title: 'SK Dashboard',
+      description: 'Manage youth events and engagement',
+      icon: Calendar,
+      path: '/sk',
+      available: userRoles.some(role => [UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN].includes(role))
+    },
+    // Admin Services
+    {
+      title: 'Admin Dashboard',
+      description: 'System administration and user management',
+      icon: Users,
+      path: '/admin',
+      available: userRoles.some(role => [UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL].includes(role))
+    },
+    // Reports
+    {
+      title: 'Reports & Analytics',
+      description: 'View comprehensive reports and insights',
+      icon: Activity,
+      path: '/reports',
+      available: userRoles.some(role => [UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BHW_COORDINATOR, UserRole.SK_CHAIRMAN].includes(role))
+    },
+    // Public Services
+    {
+      title: 'My Health Records',
       description: 'View health records and appointments',
       icon: Heart,
-      path: '/health/records',
-      available: [UserRole.PATIENT, UserRole.PARENT_RESIDENT].includes(user.role)
+      path: '/health/my-records',
+      available: userRoles.some(role => [UserRole.PATIENT, UserRole.PARENT_RESIDENT].includes(role))
     },
     {
-      title: 'Daycare Services',
-      description: 'Manage daycare registrations',
+      title: 'Daycare Registration',
+      description: 'Register children for daycare',
       icon: Baby,
-      path: '/daycare/registrations',
-      available: [UserRole.PARENT_RESIDENT].includes(user.role)
-    },
-    {
-      title: 'SK Events',
-      description: 'Register for youth events',
-      icon: Calendar,
-      path: '/sk/event-registration',
-      available: true
-    },
-    {
-      title: 'Announcements',
-      description: 'View barangay announcements',
-      icon: FileText,
-      path: '/announcements',
-      available: true
+      path: '/daycare/registration',
+      available: userRoles.some(role => [UserRole.PARENT_RESIDENT].includes(role))
     },
     {
       title: 'Profile Settings',
       description: 'Update your profile information',
       icon: Settings,
       path: '/profile',
-      available: true
-    },
-    {
-      title: 'Notifications',
-      description: 'Manage your notifications',
-      icon: Activity,
-      path: '/notifications',
       available: true
     }
   ];
@@ -98,51 +154,87 @@ export default function Dashboard() {
     <DashboardLayout currentPage="/dashboard">
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome, {user.firstName}!</h1>
-          <p className="text-muted-foreground">
-            Access your barangay services and stay connected with the community.
-          </p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.firstName}!</h1>
+              <p className="text-muted-foreground text-lg">
+                Access your barangay services and stay connected with the community.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Role-specific message */}
-        <Card>
+        {/* Multi-Role Overview */}
+        <Card className="border-l-4 border-l-primary">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Your Role: {user.role.replace('_', ' ')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {user.role === UserRole.PARENT_RESIDENT && 'Access health and daycare services for your family.'}
-                  {user.role === UserRole.PATIENT && 'Manage your health records and appointments.'}
-                  {user.role === UserRole.VISITOR && 'Explore available barangay services and events.'}
-                </p>
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {userRoles.length > 1 ? 'Multi-Role Access' : 'Your Role'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {userRoles.length > 1 
+                      ? `You have access to ${userRoles.length} different service areas. Use the dashboard below to navigate to your responsibilities.`
+                      : 'Access your designated service area and responsibilities.'
+                    }
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {userRoles.map((role, index) => {
+                    const roleInfo = getRoleInfo(role);
+                    const Icon = roleInfo.icon;
+                    return (
+                      <Badge key={index} variant={roleInfo.variant} className="flex items-center gap-1.5 px-3 py-1">
+                        <Icon className="h-3 w-3" />
+                        {roleInfo.label}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Role-Based Actions */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            {userRoles.length > 1 ? 'Your Service Areas' : 'Quick Actions'}
+          </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {availableActions.map((action, index) => {
               const Icon = action.icon;
               return (
-                <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(action.path)}>
-                  <CardHeader>
+                <Card 
+                  key={index} 
+                  className="group hover:shadow-lg hover:border-primary/20 transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+                  onClick={() => navigate(action.path)}
+                >
+                  <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
+                      <div className="p-2.5 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <CardTitle className="text-base">{action.title}</CardTitle>
+                      <CardTitle className="text-base group-hover:text-primary transition-colors">{action.title}</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
-                    <Button variant="outline" className="w-full">
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{action.description}</p>
+                    <Button 
+                      variant="outline" 
+                      className="w-full group-hover:border-primary group-hover:text-primary transition-colors"
+                    >
                       Access Service
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </CardContent>
                 </Card>
@@ -152,26 +244,41 @@ export default function Dashboard() {
         </div>
 
         {/* Information Section */}
-        <Card>
+        <Card className="bg-linear-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle>Barangay Services</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Barangay Services Overview
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="text-center">
-                <Heart className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                <h3 className="font-medium">Health Services</h3>
-                <p className="text-sm text-muted-foreground">Medical care and health monitoring</p>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="text-center space-y-3">
+                <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Health Services</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Medical care, immunization tracking, and health monitoring for all residents</p>
+                </div>
               </div>
-              <div className="text-center">
-                <Baby className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <h3 className="font-medium">Daycare Services</h3>
-                <p className="text-sm text-muted-foreground">Early childhood education and care</p>
+              <div className="text-center space-y-3">
+                <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                  <Baby className="h-8 w-8 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Daycare Services</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Early childhood education, development tracking, and safe childcare</p>
+                </div>
               </div>
-              <div className="text-center">
-                <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-medium">SK Programs</h3>
-                <p className="text-sm text-muted-foreground">Youth development and engagement</p>
+              <div className="text-center space-y-3">
+                <div className="mx-auto w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                  <Calendar className="h-8 w-8 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">SK Programs</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Youth development, community events, and leadership opportunities</p>
+                </div>
               </div>
             </div>
           </CardContent>

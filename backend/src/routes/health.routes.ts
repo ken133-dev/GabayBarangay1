@@ -16,6 +16,12 @@ import {
   createHealthRecord,
   getHealthRecords,
   getMyHealthRecords,
+  // Immunization Records
+  createImmunizationRecord,
+  getImmunizationRecords,
+  getMyImmunizationRecords,
+  getImmunizationSchedule,
+  getPatientImmunizationStatus,
   // Vaccination Management
   createVaccination,
   getVaccinations,
@@ -30,8 +36,8 @@ const router = Router();
 
 // ========== PATIENT ROUTES ==========
 router.post('/patients', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createPatient);
-router.get('/patients', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getAllPatients);
-router.get('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getPatientById);
+router.get('/patients', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT'), getAllPatients);
+router.get('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT'), getPatientById);
 router.put('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), updatePatient);
 router.delete('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), deletePatient);
 
@@ -46,6 +52,13 @@ router.patch('/appointments/:id/status', authenticate, authorize('BHW', 'BHW_COO
 router.post('/records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createHealthRecord);
 router.get('/records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getHealthRecords);
 router.get('/records/my', authenticate, authorize('PATIENT'), getMyHealthRecords);
+
+// ========== IMMUNIZATION RECORD ROUTES ==========
+router.post('/immunization-records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createImmunizationRecord);
+router.get('/immunization-records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getImmunizationRecords);
+router.get('/immunization-records/my', authenticate, authorize('PARENT_RESIDENT'), getMyImmunizationRecords);
+router.get('/immunization-schedule', authenticate, getImmunizationSchedule);
+router.get('/patients/:patientId/immunization-status', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getPatientImmunizationStatus);
 
 // ========== VACCINATION ROUTES ==========
 router.post('/vaccinations', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createVaccination);

@@ -8,11 +8,20 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
   try {
     const patientData = req.body;
 
+    // Extract guardianUserId separately to avoid passing it directly to Prisma
+    const { guardianUserId, ...patientFields } = patientData;
+
+    // Convert string values to appropriate types
+    const processedData = {
+      ...patientFields,
+      dateOfBirth: new Date(patientFields.dateOfBirth),
+      birthWeight: patientFields.birthWeight ? parseFloat(patientFields.birthWeight) : null,
+      birthLength: patientFields.birthLength ? parseFloat(patientFields.birthLength) : null,
+      guardianUserId: guardianUserId || null
+    };
+
     const patient = await prisma.patient.create({
-      data: {
-        ...patientData,
-        dateOfBirth: new Date(patientData.dateOfBirth)
-      }
+      data: processedData
     });
 
     res.status(201).json({ message: 'Patient created successfully', patient });
@@ -37,8 +46,7 @@ export const getAllPatients = async (req: AuthRequest, res: Response) => {
         _count: {
           select: {
             appointments: true,
-            healthRecords: true,
-            vaccinations: true
+            immunizationRecords: true
           }
         }
       },
@@ -71,11 +79,7 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
           orderBy: { appointmentDate: 'desc' },
           take: 10
         },
-        healthRecords: {
-          orderBy: { recordDate: 'desc' },
-          take: 10
-        },
-        vaccinations: {
+        immunizationRecords: {
           orderBy: { dateGiven: 'desc' }
         }
       }
@@ -197,7 +201,7 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
             id: true,
             firstName: true,
             lastName: true,
-            role: true
+            roles: true
           }
         }
       }
@@ -271,20 +275,167 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// ========== HEALTH RECORDS ==========
+// ========== IMMUNIZATION RECORDS ==========
+
+export const createImmunizationRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      patientId,
+      vaccineName,
+      vaccineType,
+      manufacturer,
+      lotNumber,
+      dosage,
+      dateGiven,
+      ageAtVaccination,
+      siteOfAdministration,
+      administeredBy,
+      doseNumber,
+      nextDueDate,
+      batchNumber,
+      expirationDate,
+      adverseReactions,
+      notes
+    } = req.body;
+
+    const recordedBy = req.user!.userId;
+
+    const immunizationRecord = await prisma.immunizationRecord.create({
+      data: {
+        patientId,
+        vaccineName,
+        vaccineType,
+        manufacturer,
+        lotNumber,
+        dosage,
+        dateGiven: new Date(dateGiven),
+        ageAtVaccination,
+        siteOfAdministration,
+        administeredBy,
+        doseNumber,
+        nextDueDate: nextDueDate ? new Date(nextDueDate) : null,
+        batchNumber,
+        expirationDate: expirationDate ? new Date(expirationDate) : null,
+        adverseReactions,
+        recordedBy,
+        notes
+      },
+      include: {
+        patient: true
+      }
+    });
+
+    res.status(201).json({ message: 'Immunization record created successfully', immunizationRecord });
+  } catch (error) {
+    console.error('Create immunization record error:', error);
+    res.status(500).json({ error: 'Failed to create immunization record' });
+  }
+};
+
+export const getImmunizationRecords = async (req: AuthRequest, res: Response) => {
+  try {
+    const { patientId } = req.query;
+
+    const where = patientId ? { patientId: patientId as string } : {};
+
+    const immunizationRecords = await prisma.immunizationRecord.findMany({
+      where,
+      include: {
+        patient: true
+      },
+      orderBy: { dateGiven: 'desc' }
+    });
+
+    res.json({ immunizationRecords });
+  } catch (error) {
+    console.error('Get immunization records error:', error);
+    res.status(500).json({ error: 'Failed to fetch immunization records' });
+  }
+};
+
+export const getImmunizationSchedule = async (req: AuthRequest, res: Response) => {
+  try {
+    const schedule = await prisma.immunizationSchedule.findMany({
+      orderBy: [{ ageInDays: 'asc' }, { doseNumber: 'asc' }]
+    });
+
+    res.json({ schedule });
+  } catch (error) {
+    console.error('Get immunization schedule error:', error);
+    res.status(500).json({ error: 'Failed to fetch immunization schedule' });
+  }
+};
+
+export const getPatientImmunizationStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { patientId } = req.params;
+
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+      include: {
+        immunizationRecords: {
+          orderBy: { dateGiven: 'desc' }
+        }
+      }
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    // Calculate age in days
+    const ageInDays = Math.floor((Date.now() - patient.dateOfBirth.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Get recommended schedule for patient's age
+    const recommendedSchedule = await prisma.immunizationSchedule.findMany({
+      where: {
+        ageInDays: { lte: ageInDays }
+      },
+      orderBy: [{ ageInDays: 'asc' }, { doseNumber: 'asc' }]
+    });
+
+    // Check completion status
+    const completionStatus = recommendedSchedule.map(schedule => {
+      const completed = patient.immunizationRecords.find(record => 
+        record.vaccineName === schedule.vaccineName && 
+        record.doseNumber === schedule.doseNumber
+      );
+      
+      return {
+        ...schedule,
+        completed: !!completed,
+        completedDate: completed?.dateGiven || null
+      };
+    });
+
+    res.json({ 
+      patient, 
+      ageInDays, 
+      completionStatus,
+      totalRequired: recommendedSchedule.length,
+      totalCompleted: completionStatus.filter(s => s.completed).length
+    });
+  } catch (error) {
+    console.error('Get patient immunization status error:', error);
+    res.status(500).json({ error: 'Failed to fetch immunization status' });
+  }
+};
+
+// ========== HEALTH RECORDS (Legacy) ==========
 
 export const createHealthRecord = async (req: AuthRequest, res: Response) => {
   try {
-    const { patientId, diagnosis, treatment, medications, vital_signs, notes } = req.body;
+    const { patientId, vaccineName, vaccineType, administeredBy, notes } = req.body;
+    const recordedBy = req.user!.userId;
 
-    const healthRecord = await prisma.healthRecord.create({
+    const healthRecord = await prisma.immunizationRecord.create({
       data: {
         patientId,
-        recordDate: new Date(),
-        diagnosis,
-        treatment,
-        medications,
-        vitalSigns: vital_signs,
+        dateGiven: new Date(),
+        vaccineName: vaccineName || 'General Health Record',
+        vaccineType: vaccineType || 'HEALTH_RECORD',
+        administeredBy: administeredBy || recordedBy,
+        recordedBy,
         notes
       },
       include: {
@@ -305,12 +456,12 @@ export const getHealthRecords = async (req: AuthRequest, res: Response) => {
 
     const where = patientId ? { patientId: patientId as string } : {};
 
-    const healthRecords = await prisma.healthRecord.findMany({
+    const healthRecords = await prisma.immunizationRecord.findMany({
       where,
       include: {
         patient: true
       },
-      orderBy: { recordDate: 'desc' }
+      orderBy: { dateGiven: 'desc' }
     });
 
     res.json({ healthRecords });
@@ -330,87 +481,78 @@ export const getMyHealthRecords = async (req: AuthRequest, res: Response) => {
     });
 
     if (!patient) {
-      return res.json({ healthRecords: [] });
+      return res.json({ immunizationRecords: [], healthRecords: [] });
     }
 
-    const healthRecords = await prisma.healthRecord.findMany({
+    const healthRecords = await prisma.immunizationRecord.findMany({
       where: { patientId: patient.id },
-      orderBy: { recordDate: 'desc' }
+      orderBy: { dateGiven: 'desc' }
     });
 
-    res.json({ healthRecords, patient });
+    const immunizationRecords = await prisma.immunizationRecord.findMany({
+      where: { patientId: patient.id },
+      orderBy: { dateGiven: 'desc' }
+    });
+
+    // For backward compatibility, also return as 'vaccinations'
+    res.json({ 
+      healthRecords, 
+      immunizationRecords, 
+      vaccinations: immunizationRecords, 
+      patient 
+    });
   } catch (error) {
     console.error('Get my health records error:', error);
     res.status(500).json({ error: 'Failed to fetch health records' });
   }
 };
 
-// ========== VACCINATION MANAGEMENT ==========
-
-export const createVaccination = async (req: AuthRequest, res: Response) => {
+export const getMyImmunizationRecords = async (req: AuthRequest, res: Response) => {
   try {
-    const {
-      patientId,
-      vaccineName,
-      vaccineType,
-      dosage,
-      dateGiven,
-      nextDueDate,
-      administeredBy,
-      batchNumber,
-      notes
-    } = req.body;
+    const userId = req.user!.userId;
 
-    const vaccination = await prisma.vaccination.create({
-      data: {
-        patientId,
-        vaccineName,
-        vaccineType,
-        dosage,
-        dateGiven: new Date(dateGiven),
-        nextDueDate: nextDueDate ? new Date(nextDueDate) : null,
-        administeredBy,
-        batchNumber,
-        notes
-      },
-      include: {
-        patient: true
-      }
+    // Find patient linked to this user
+    const patient = await prisma.patient.findFirst({
+      where: { userId }
     });
 
-    res.status(201).json({ message: 'Vaccination record created successfully', vaccination });
-  } catch (error) {
-    console.error('Create vaccination error:', error);
-    res.status(500).json({ error: 'Failed to create vaccination record' });
-  }
-};
+    if (!patient) {
+      return res.json({ immunizationRecords: [] });
+    }
 
-export const getVaccinations = async (req: AuthRequest, res: Response) => {
-  try {
-    const { patientId } = req.query;
-
-    const where = patientId ? { patientId: patientId as string } : {};
-
-    const vaccinations = await prisma.vaccination.findMany({
-      where,
+    const immunizationRecords = await prisma.immunizationRecord.findMany({
+      where: { patientId: patient.id },
       include: {
         patient: true
       },
       orderBy: { dateGiven: 'desc' }
     });
 
-    res.json({ vaccinations });
+    res.json({ immunizationRecords });
   } catch (error) {
-    console.error('Get vaccinations error:', error);
-    res.status(500).json({ error: 'Failed to fetch vaccinations' });
+    console.error('Get my immunization records error:', error);
+    res.status(500).json({ error: 'Failed to fetch immunization records' });
   }
+};
+
+// ========== VACCINATION MANAGEMENT (Legacy - Use ImmunizationRecord instead) ==========
+// Note: These endpoints redirect to immunization records for consistency
+
+export const createVaccination = async (req: AuthRequest, res: Response) => {
+  // Redirect to immunization record creation for consistency
+  return createImmunizationRecord(req, res);
+};
+
+export const getVaccinations = async (req: AuthRequest, res: Response) => {
+  // Redirect to immunization records for consistency
+  return getImmunizationRecords(req, res);
 };
 
 export const getUpcomingVaccinations = async (req: AuthRequest, res: Response) => {
   try {
     const today = new Date();
 
-    const vaccinations = await prisma.vaccination.findMany({
+    const immunizationRecords = await prisma.immunizationRecord.findMany({
       where: {
         nextDueDate: {
           gte: today
@@ -422,10 +564,10 @@ export const getUpcomingVaccinations = async (req: AuthRequest, res: Response) =
       orderBy: { nextDueDate: 'asc' }
     });
 
-    res.json({ vaccinations });
+    res.json({ vaccinations: immunizationRecords }); // Keep 'vaccinations' key for backward compatibility
   } catch (error) {
-    console.error('Get upcoming vaccinations error:', error);
-    res.status(500).json({ error: 'Failed to fetch upcoming vaccinations' });
+    console.error('Get upcoming immunizations error:', error);
+    res.status(500).json({ error: 'Failed to fetch upcoming immunizations' });
   }
 };
 

@@ -3,6 +3,8 @@ import {
   getAdminStats,
   getAllUsers,
   updateUserStatus,
+  updateUserRole,
+  updateUserRoles,
   getSystemSettings,
   updateSystemSettings,
   getAuditLogs,
@@ -33,6 +35,18 @@ router.patch('/users/:userId/status',
   authenticate, 
   authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
   updateUserStatus
+);
+
+router.put('/users/:userId/role', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  updateUserRole
+);
+
+router.put('/users/:userId/roles', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  updateUserRoles
 );
 
 // ========== SYSTEM SETTINGS ==========

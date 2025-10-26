@@ -47,8 +47,8 @@ export default defineConfig({
         ]
       },
       manifest: {
-        name: 'TheyCare Portal',
-        short_name: 'TheyCare',
+        name: 'Gabay Barangay',
+        short_name: 'Gabay Barangay',
         description: 'Barangay Management System for Health, Daycare, and SK Services',
         theme_color: '#2F5233',
         background_color: '#ffffff',
@@ -83,5 +83,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+  },
+  preview: {
+    port: 5173,
+    host: true
   }
 })

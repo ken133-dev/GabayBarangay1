@@ -96,7 +96,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">TheyCare Portal</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Gabay Barangay</h1>
           <p className="text-gray-600 mt-2">Barangay Management System</p>
         </div>
 

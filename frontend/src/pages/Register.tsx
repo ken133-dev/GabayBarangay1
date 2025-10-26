@@ -16,7 +16,10 @@ import {
   Lock,
   User,
   ArrowLeft,
-  Clock
+  Clock,
+  Eye,
+  EyeOff,
+  Phone
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -26,10 +29,13 @@ export default function Register() {
     firstName: '',
     lastName: '',
     email: '',
+    contactNumber: '',
     password: '',
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { register: registerUser } = useAuth();
 
@@ -48,6 +54,7 @@ export default function Register() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        contactNumber: formData.contactNumber,
         role: 'PARENT_RESIDENT' // Default role for self-registration
       });
 
@@ -93,7 +100,7 @@ export default function Register() {
               <h2 className="text-3xl xl:text-4xl font-bold leading-tight">
                 Become Part of
                 <br />
-                TheyCare Family
+                Gabay Barangay Community
               </h2>
               <p className="text-base xl:text-lg text-primary-foreground/90">
                 Get instant access to health services, daycare programs, and youth activities
@@ -236,6 +243,23 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="contactNumber" className="text-sm font-medium">
+                  Contact Number
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="contactNumber"
+                    type="tel"
+                    placeholder="+63 9XX XXX XXXX"
+                    onChange={handleChange}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium">
                   Password
                 </Label>
@@ -243,12 +267,25 @@ export default function Register() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     onChange={handleChange}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
@@ -260,12 +297,25 @@ export default function Register() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="••••••••"
                     onChange={handleChange}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
 

@@ -50,7 +50,8 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role?: string;
+  roles?: string[];
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'INACTIVE';
   contactNumber?: string;
   createdAt: string;
@@ -67,7 +68,7 @@ const USER_ROLES = [
   'SK_OFFICER',
   'SK_CHAIRMAN',
   'PARENT_RESIDENT',
-  'PATIENT',
+
   'VISITOR'
 ];
 
@@ -83,7 +84,8 @@ export default function UserManagement() {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(user.role);
+  const userRoles = user.roles || [user.role || 'VISITOR'];
+  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
   useEffect(() => {
     if (!isAdmin) {
@@ -131,7 +133,10 @@ export default function UserManagement() {
 
     // Role filter
     if (roleFilter !== 'all') {
-      filtered = filtered.filter((u) => u.role === roleFilter);
+      filtered = filtered.filter((u) => {
+        const userRoles = u.roles || [u.role];
+        return userRoles.includes(roleFilter);
+      });
     }
 
     // Status filter
@@ -193,6 +198,8 @@ export default function UserManagement() {
   };
 
   const getRoleBadge = (role: string) => {
+    if (!role) return <Badge variant="outline">Unknown</Badge>;
+    
     const roleColors: Record<string, string> = {
       SYSTEM_ADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
       BARANGAY_CAPTAIN: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -224,7 +231,7 @@ export default function UserManagement() {
       ...filteredUsers.map(u => [
         `${u.firstName} ${u.lastName}`,
         u.email,
-        u.role,
+        u.roles ? u.roles.join('; ') : u.role || 'Unknown',
         u.status,
         u.contactNumber || '',
         formatDate(u.createdAt)
@@ -405,7 +412,17 @@ export default function UserManagement() {
                         {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>
+                        {user.roles ? (
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles.map((role, idx) => (
+                              <span key={idx}>{getRoleBadge(role)}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          getRoleBadge(user.role || 'Unknown')
+                        )}
+                      </TableCell>
                       <TableCell>{getStatusBadge(user.status)}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {user.contactNumber || 'N/A'}

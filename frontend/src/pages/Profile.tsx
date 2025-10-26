@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import type { User } from '@/types/index';
 import { Mail, Bell } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function Profile() {
   const [profile, setProfile] = useState<User | null>(null);
@@ -16,7 +18,8 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: ''
+    email: '',
+    otpEnabled: false
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -41,7 +44,8 @@ export default function Profile() {
         setFormData({
           firstName: profileData.firstName,
           lastName: profileData.lastName,
-          email: profileData.email
+          email: profileData.email,
+          otpEnabled: profileData.otpEnabled || false
         });
       } catch {
         toast.error('Failed to load profile');
@@ -56,11 +60,16 @@ export default function Profile() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    // (Assume update is always successful for now)
-    toast.success('Profile updated successfully!');
-    const updatedProfile: User = { ...profile!, ...formData };
-    setProfile(updatedProfile);
-    localStorage.setItem('user', JSON.stringify(updatedProfile));
+    try {
+      const response = await api.put('/auth/profile', formData);
+
+      setProfile(response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Update profile error:', error);
+      toast.error('Failed to update profile');
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -209,6 +218,26 @@ export default function Profile() {
               </div>
               <Button type="submit">Change Password</Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Two-Factor Authentication</CardTitle>
+            <CardDescription>Enable OTP for additional security.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">SMS OTP</p>
+                <p className="text-sm text-muted-foreground">Receive OTP via SMS for login</p>
+              </div>
+              <Switch
+                checked={formData.otpEnabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, otpEnabled: checked })}
+              />
+            </div>
+            <Button onClick={handleUpdateProfile} className="mt-4">Save Changes</Button>
           </CardContent>
         </Card>
 

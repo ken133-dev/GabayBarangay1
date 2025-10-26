@@ -5,30 +5,54 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from 'sonner';
-import { Heart, Baby, Trophy } from 'lucide-react';
+import { Heart, Baby, Trophy, Eye, EyeOff, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, sendOTP: sendLoginOTP, verifyOTP: verifyLoginOTP } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await login(email, password);
+      if (step === 'credentials') {
+        // First step: validate credentials
+        const { requiresOTP } = await login(email, password);
 
-      toast.success('Login successful!', {
-        description: 'Welcome back!'
-      });
+        if (requiresOTP) {
+          // Send OTP if required
+          await sendLoginOTP(email);
+          toast.success('OTP sent!', {
+            description: 'Please check your phone for the verification code.'
+          });
+          setStep('otp');
+        } else {
+          // Direct login without OTP
+          toast.success('Login successful!', {
+            description: 'Welcome back!'
+          });
+          navigate('/dashboard');
+        }
+      } else {
+        // Second step: verify OTP
+        await verifyLoginOTP(email, otp);
 
-      // Redirect to dashboard
-      navigate('/dashboard');
+        toast.success('Login successful!', {
+          description: 'Welcome back!'
+        });
+
+        // Redirect to dashboard
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
 
@@ -41,6 +65,14 @@ export default function Login() {
         toast.error('Login failed', {
           description: 'Invalid email or password. Please try again.'
         });
+      } else if (err.response?.status === 404) {
+        toast.error('User not found', {
+          description: 'No account found with this email address.'
+        });
+      } else if (err.response?.status === 400) {
+        toast.error('OTP verification failed', {
+          description: err.response.data.error || 'Invalid or expired OTP code.'
+        });
       } else {
         toast.error('Login failed', {
           description: 'An error occurred. Please try again later.'
@@ -49,6 +81,11 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBackToCredentials = () => {
+    setStep('credentials');
+    setOtp('');
   };
 
   return (
@@ -62,49 +99,112 @@ export default function Login() {
             <form className="p-6 md:p-8" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">Welcome back</h1>
+                  <h1 className="text-2xl font-bold">
+                    {step === 'credentials' ? 'Welcome back' : 'Verify your identity'}
+                  </h1>
                   <p className="text-balance text-muted-foreground">
-                    Login to your TheyCare Portal account
+                    {step === 'credentials'
+                      ? 'Login to your Gabay Barangay account'
+                      : 'Enter the 6-digit code sent to your phone'
+                    }
                   </p>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                      to="/forgot-password"
-                      className="ml-auto text-sm underline-offset-2 hover:underline"
+
+                {step === 'credentials' ? (
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center">
+                        <Label htmlFor="password">Password</Label>
+                        <Link
+                          to="/forgot-password"
+                          className="ml-auto text-sm underline-offset-2 hover:underline"
+                        >
+                          Forgot your password?
+                        </Link>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="otp">Verification Code</Label>
+                      <div className="relative">
+                        <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="otp"
+                          type="text"
+                          placeholder="000000"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          className="pl-10 text-center text-lg tracking-widest"
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Enter the 6-digit code sent to your registered phone number
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleBackToCredentials}
+                      className="w-full gap-2"
                     >
-                      Forgot your password?
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to login
+                    </Button>
+                  </>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading
+                    ? (step === 'credentials' ? 'Logging in...' : 'Verifying...')
+                    : (step === 'credentials' ? 'Login' : 'Verify & Login')
+                  }
+                </Button>
+
+                {step === 'credentials' && (
+                  <div className="text-center text-sm">
+                    Don&apos;t have an account?{" "}
+                    <Link to="/register" className="underline underline-offset-4">
+                      Sign up
                     </Link>
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Logging in...' : 'Login'}
-                </Button>
-                <div className="text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link to="/register" className="underline underline-offset-4">
-                    Sign up
-                  </Link>
-                </div>
+                )}
               </div>
             </form>
             <div className="relative hidden bg-muted md:block">

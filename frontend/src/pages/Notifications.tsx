@@ -302,8 +302,8 @@ export default function Notifications() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-sm text-muted-foreground">
-              <p>Notifications are kept for 30 days.</p>
-              <p>Older notifications are automatically archived.</p>
+              <p>Notifications are automatically managed by the system.</p>
+              <p>Important notifications are preserved for your reference.</p>
             </div>
           </CardContent>
         </Card>

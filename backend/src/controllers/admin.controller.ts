@@ -12,7 +12,8 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       suspendedUsers,
       totalPatients,
       totalStudents,
-      totalEvents
+      totalEvents,
+      recentActivities
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -20,7 +21,19 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       prisma.user.count({ where: { status: 'SUSPENDED' } }),
       prisma.patient.count(),
       prisma.daycareStudent.count(),
-      prisma.event.count({ where: { status: 'PUBLISHED' } })
+      prisma.event.count({ where: { status: 'PUBLISHED' } }),
+      prisma.auditLog.findMany({
+        take: 5,
+        orderBy: { timestamp: 'desc' },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          }
+        }
+      })
     ]);
 
     const stats = {
@@ -30,7 +43,14 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       suspendedUsers,
       totalPatients,
       totalStudents,
-      totalEvents
+      totalEvents,
+      recentActivities: recentActivities.map(log => ({
+        id: log.id,
+        action: log.action,
+        user: log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System',
+        timestamp: formatTimeAgo(log.timestamp),
+        type: getActivityType(log.action)
+      }))
     };
 
     res.json({ stats });
@@ -38,6 +58,32 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
     console.error('Get admin stats error:', error);
     res.status(500).json({ error: 'Failed to fetch admin stats' });
   }
+};
+
+// Helper function to format time ago
+const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+};
+
+// Helper function to determine activity type
+const getActivityType = (action: string): 'success' | 'warning' | 'info' => {
+  if (action.toLowerCase().includes('suspend') || action.toLowerCase().includes('delete')) {
+    return 'warning';
+  }
+  if (action.toLowerCase().includes('create') || action.toLowerCase().includes('approve')) {
+    return 'success';
+  }
+  return 'info';
 };
 
 // ========== USER MANAGEMENT ==========
@@ -48,7 +94,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const where: any = {};
     
     if (status) where.status = status;
-    if (role) where.role = role;
+    if (role) where.roles = { has: role };
     if (search) {
       where.OR = [
         { firstName: { contains: search as string, mode: 'insensitive' } },
@@ -64,7 +110,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
+        roles: true,
         status: true,
         createdAt: true,
         contactNumber: true,
@@ -97,7 +143,7 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
+        roles: true,
         status: true
       }
     });
@@ -120,6 +166,103 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const updateUserRole = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    const validRoles = [
+      'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL',
+      'BHW', 'BHW_COORDINATOR', 'DAYCARE_STAFF', 'DAYCARE_TEACHER',
+      'SK_OFFICER', 'SK_CHAIRMAN', 'PARENT_RESIDENT', 'VISITOR'
+    ];
+
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { roles: [role as any] },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        roles: true,
+        status: true
+      }
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        action: `Updated user role to ${role}`,
+        entityType: 'USER',
+        entityId: userId,
+        changes: { role }
+      }
+    });
+
+    res.json({ user, message: 'User role updated successfully' });
+  } catch (error) {
+    console.error('Update user role error:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+};
+
+export const updateUserRoles = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { roles } = req.body;
+
+    const validRoles = [
+      'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL',
+      'BHW', 'BHW_COORDINATOR', 'DAYCARE_STAFF', 'DAYCARE_TEACHER',
+      'SK_OFFICER', 'SK_CHAIRMAN', 'PARENT_RESIDENT', 'VISITOR'
+    ];
+
+    if (!Array.isArray(roles) || roles.length === 0) {
+      return res.status(400).json({ error: 'Roles must be a non-empty array' });
+    }
+
+    const invalidRoles = roles.filter(role => !validRoles.includes(role));
+    if (invalidRoles.length > 0) {
+      return res.status(400).json({ error: `Invalid roles: ${invalidRoles.join(', ')}` });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { roles: roles as any[] },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        roles: true,
+        status: true
+      }
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        action: `Updated user roles to ${roles.join(', ')}`,
+        entityType: 'USER',
+        entityId: userId,
+        changes: { roles }
+      }
+    });
+
+    res.json({ user, message: 'User roles updated successfully' });
+  } catch (error) {
+    console.error('Update user roles error:', error);
+    res.status(500).json({ error: 'Failed to update user roles' });
+  }
+};
+
 // ========== SYSTEM SETTINGS ==========
 export const getSystemSettings = async (req: AuthRequest, res: Response) => {
   try {
@@ -133,7 +276,7 @@ export const getSystemSettings = async (req: AuthRequest, res: Response) => {
           barangayAddress: 'Daraga, Albay, Philippines',
           barangayEmail: 'contact@barangaybinitayan.gov.ph',
           barangayContactNumber: '+63 XXX XXX XXXX',
-          systemName: 'TheyCare Portal',
+          systemName: 'Gabay Barangay',
           systemVersion: '1.0.0',
           maintenanceMode: false,
           allowRegistration: true,
@@ -163,7 +306,7 @@ export const updateSystemSettings = async (req: AuthRequest, res: Response) => {
           barangayAddress: 'Daraga, Albay, Philippines',
           barangayEmail: 'contact@barangaybinitayan.gov.ph',
           barangayContactNumber: '+63 XXX XXX XXXX',
-          systemName: 'TheyCare Portal',
+          systemName: 'Gabay Barangay',
           systemVersion: '1.0.0',
           maintenanceMode: false,
           allowRegistration: true,

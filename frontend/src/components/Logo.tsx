@@ -22,7 +22,7 @@ interface LogoProps {
   showText?: boolean;
 
   /**
-   * Custom text to display (defaults to "TheyCare Portal")
+   * Custom text to display (defaults to "Gabay Barangay")
    */
   text?: string;
 }
@@ -39,7 +39,7 @@ export function Logo({
   size = 'md',
   className,
   showText = false,
-  text = 'TheyCare Portal'
+  text = 'Gabay Barangay'
 }: LogoProps) {
   // Use PNG logo (user's actual logo file)
   const logoSrc = variant === 'white'
@@ -57,7 +57,7 @@ export function Logo({
     <div className={cn('flex items-center gap-3', className)}>
       <img
         src={logoSrc}
-        alt="TheyCare Logo"
+        alt="Gabay Barangay Logo"
         className={cn(sizeClasses[size], 'w-auto object-contain')}
         onError={handleImageError}
       />
@@ -72,7 +72,7 @@ export function Logo({
           size === 'xl' && 'text-4xl'
         )}
       >
-        TheyCare
+        Gabay Barangay
       </div>
 
       {showText && (

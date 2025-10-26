@@ -29,8 +29,10 @@ export interface User {
   middleName?: string;
   contactNumber?: string;
   address?: string;
-  role: UserRole;
+  role?: UserRole; // Legacy single role support
+  roles?: UserRole[]; // New multi-role support
   status: AccountStatus;
+  otpEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +41,7 @@ export interface AuthResponse {
   message: string;
   token: string;
   user: User;
+  requiresOTP?: boolean;
 }
 
 // Health Types
@@ -53,6 +56,14 @@ export interface Patient {
   address: string;
   contactNumber: string;
   emergencyContact: string;
+  guardianName?: string;
+  birthWeight?: string;
+  birthLength?: string;
+  motherName?: string;
+  fatherName?: string;
+  placeOfBirth?: string;
+  createdAt?: string;
+  userId?: string; // Link to user account for residents
 }
 
 export interface Appointment {
@@ -63,6 +74,7 @@ export interface Appointment {
   status: string;
   notes?: string;
   patient?: Patient;
+  healthWorker?: User;
 }
 
 // Event Types

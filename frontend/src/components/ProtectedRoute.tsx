@@ -48,7 +48,8 @@ export default function ProtectedRoute({
   }
 
   // Check role-based access
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const userRoles = user.roles || (user.role ? [user.role] : [UserRole.VISITOR]);
+  if (allowedRoles && !userRoles.some(role => allowedRoles.includes(role))) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="max-w-md text-center space-y-4">
@@ -57,7 +58,7 @@ export default function ProtectedRoute({
             You don't have permission to access this page.
           </p>
           <p className="text-sm text-muted-foreground">
-            Your current role: <strong>{user.role}</strong>
+            Your current roles: <strong>{userRoles.join(', ')}</strong>
           </p>
         </div>
       </div>

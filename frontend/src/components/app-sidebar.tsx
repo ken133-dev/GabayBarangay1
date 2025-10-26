@@ -79,8 +79,7 @@ const getRoleBasedNavigation = (userRole: string) => {
             { title: "Dashboard", url: "/health" },
             { title: "Patients", url: "/health/patients" },
             { title: "Appointments", url: "/health/appointments" },
-            { title: "Health Records", url: "/health/records" },
-            { title: "Vaccinations", url: "/health/vaccinations" },
+            { title: "Immunization Cards", url: "/health/records" },
             { title: "Certificates", url: "/health/certificates" },
           ],
         },
@@ -184,8 +183,7 @@ const getRoleBasedNavigation = (userRole: string) => {
             { title: "Dashboard", url: "/health" },
             { title: "Patient Management", url: "/health/patients" },
             { title: "Appointments", url: "/health/appointments" },
-            { title: "Health Records", url: "/health/records" },
-            { title: "Vaccinations", url: "/health/vaccinations" },
+            { title: "Immunization Cards", url: "/health/records" },
             { title: "Certificates", url: "/health/certificates" },
           ],
         },
@@ -207,7 +205,7 @@ const getRoleBasedNavigation = (userRole: string) => {
       quickActions: [
         { name: "Add Patient", url: "/health/patients", icon: Users },
         { name: "Schedule Appointment", url: "/health/appointments", icon: Calendar },
-        { name: "Record Vaccination", url: "/health/vaccinations", icon: Syringe },
+        { name: "Record Immunization", url: "/health/records", icon: Syringe },
       ],
     };
   }
@@ -315,6 +313,16 @@ const getRoleBasedNavigation = (userRole: string) => {
           ],
         },
         {
+          title: "My Health",
+          url: "/health",
+          icon: Heart,
+          items: [
+            { title: "My Appointments", url: "/health/appointments" },
+            { title: "Immunization Cards", url: "/health/records" },
+            { title: "Immunization E-Card", url: "/health/certificates" },
+          ],
+        },
+        {
           title: "Events",
           url: "/events/public",
           icon: Calendar,
@@ -336,55 +344,13 @@ const getRoleBasedNavigation = (userRole: string) => {
       ],
       quickActions: [
         { name: "Register Child", url: "/daycare/registrations", icon: Baby },
-        { name: "Browse Events", url: "/events/public", icon: Calendar },
-        { name: "View Announcements", url: "/announcements", icon: Megaphone },
+        { name: "View Appointments", url: "/health/appointments", icon: Calendar },
+        { name: "Immunization Cards", url: "/health/records", icon: FileText },
       ],
     };
   }
 
-  // Patient
-  if (userRole === 'PATIENT') {
-    return {
-      main: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: LayoutDashboard,
-          isActive: true,
-        },
-        {
-          title: "My Health",
-          url: "/health",
-          icon: Heart,
-          items: [
-            { title: "My Appointments", url: "/health/appointments" },
-            { title: "Health Records", url: "/health/records" },
-            { title: "E-Health Card", url: "/health/certificates" },
-          ],
-        },
-        {
-          title: "Events",
-          url: "/events/public",
-          icon: Calendar,
-        },
-        {
-          title: "Announcements",
-          url: "/announcements",
-          icon: Megaphone,
-        },
-        {
-          title: "Notifications",
-          url: "/notifications",
-          icon: Bell,
-        },
-      ],
-      quickActions: [
-        { name: "View Appointments", url: "/health/appointments", icon: Calendar },
-        { name: "Health Records", url: "/health/records", icon: FileText },
-        { name: "E-Health Card", url: "/health/certificates", icon: Heart },
-      ],
-    };
-  }
+
 
   // Visitor - Public access only
   return {
@@ -450,8 +416,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <TeamSwitcher
           teams={[{
-            name: "TheyCare Portal",
-            logo: () => <img src="/theycare.png" alt="TheyCare" className="h-8 w-8 object-contain" style={{ aspectRatio: '1/1' }} />, // Use a function component for logo
+            name: "Gabay Barangay",
+            logo: () => <img src="/theycare.png" alt="Gabay Barangay" className="h-8 w-8 object-contain" style={{ aspectRatio: '1/1' }} />, // Use a function component for logo
             plan: "Community"
           }]}
         />

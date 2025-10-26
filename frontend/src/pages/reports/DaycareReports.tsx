@@ -62,46 +62,7 @@ export default function DaycareReports() {
       setReport(response.data.report || response.data);
     } catch (error) {
       console.error('Failed to fetch daycare report:', error);
-      // Provide fallback data
-      const fallbackReport: DaycareReport = {
-        summary: {
-          totalStudents: 34,
-          totalRegistrations: 42,
-          approvedRegistrations: 34,
-          pendingRegistrations: 8,
-          averageAttendanceRate: 92.5
-        },
-        registrations: {
-          byStatus: [
-            { status: 'Approved', count: 34 },
-            { status: 'Pending', count: 8 }
-          ],
-          monthlyTrends: [
-            { month: 'Jan', count: 8 },
-            { month: 'Feb', count: 12 },
-            { month: 'Mar', count: 6 },
-            { month: 'Apr', count: 9 },
-            { month: 'May', count: 7 }
-          ]
-        },
-        attendance: {
-          averageRate: 92.5,
-          totalRecords: 680,
-          presentCount: 629,
-          absentCount: 51
-        },
-        demographics: {
-          byAgeGroup: [
-            { ageGroup: '3-4 years', count: 18 },
-            { ageGroup: '4-5 years', count: 16 }
-          ],
-          byGender: [
-            { gender: 'Female', count: 17 },
-            { gender: 'Male', count: 17 }
-          ]
-        }
-      };
-      setReport(fallbackReport);
+      toast.error('Failed to load daycare report');
     } finally {
       setLoading(false);
     }

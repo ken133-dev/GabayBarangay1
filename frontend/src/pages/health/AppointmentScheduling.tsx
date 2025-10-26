@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, CalendarPlus, Calendar, Clock, Users, CheckCircle } from 'lucide-react';
+import { Search, CalendarPlus, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Appointment, Patient } from '@/types/index';
 
@@ -18,6 +18,8 @@ export default function AppointmentScheduling() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     patientId: '',
@@ -35,7 +37,7 @@ export default function AppointmentScheduling() {
     try {
       const response = await api.get('/health/appointments');
       setAppointments(response.data.appointments || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch appointments');
       console.error('Failed to fetch appointments');
     } finally {
@@ -47,7 +49,7 @@ export default function AppointmentScheduling() {
     try {
       const response = await api.get('/health/patients');
       setPatients(response.data.patients || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch patients');
       console.error('Failed to fetch patients');
     }
@@ -66,8 +68,30 @@ export default function AppointmentScheduling() {
       });
       fetchAppointments();
       toast.success('Appointment scheduled successfully');
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to schedule appointment');
+    } catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
+        ? String((error.response.data as { error: string }).error)
+        : 'Failed to schedule appointment';
+      toast.error(message);
+    }
+  };
+
+  const handleViewDetails = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsDialog(true);
+  };
+
+  const handleUpdateStatus = async (appointmentId: string, status: string) => {
+    try {
+      await api.patch(`/health/appointments/${appointmentId}/status`, { status });
+      fetchAppointments();
+      toast.success(`Appointment ${status.toLowerCase()} successfully`);
+      setShowDetailsDialog(false);
+    } catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
+        ? String((error.response.data as { error: string }).error)
+        : 'Failed to update appointment';
+      toast.error(message);
     }
   };
 
@@ -75,11 +99,11 @@ export default function AppointmentScheduling() {
     `${appointment.patient?.firstName} ${appointment.patient?.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const upcomingCount = appointments.filter(a =>
+  const upcomingCount = appointments.filter((a: Appointment) =>
     new Date(a.appointmentDate) > new Date() && a.status === 'SCHEDULED'
   ).length;
 
-  const completedCount = appointments.filter(a => a.status === 'COMPLETED').length;
+  const completedCount = appointments.filter((a: Appointment) => a.status === 'COMPLETED').length;
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
@@ -202,6 +226,111 @@ export default function AppointmentScheduling() {
           </Dialog>
         </div>
 
+        {/* Appointment Details Dialog */}
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Appointment Details</DialogTitle>
+              <DialogDescription>
+                Complete appointment information and management
+              </DialogDescription>
+            </DialogHeader>
+            {selectedAppointment && (
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Patient Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Patient Name</Label>
+                        <p className="text-sm">{selectedAppointment.patient?.firstName} {selectedAppointment.patient?.lastName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Contact</Label>
+                        <p className="text-sm">{selectedAppointment.patient?.contactNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                        <p className="text-sm">{selectedAppointment.patient?.address || 'N/A'}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Appointment Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                        <div className="mt-1">{getTypeBadge(selectedAppointment.appointmentType)}</div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Date & Time</Label>
+                        <p className="text-sm">{new Date(selectedAppointment.appointmentDate).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                        <div className="mt-1">{getStatusBadge(selectedAppointment.status)}</div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Health Worker</Label>
+                        <p className="text-sm">{selectedAppointment.healthWorker?.firstName} {selectedAppointment.healthWorker?.lastName}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Notes */}
+                {selectedAppointment.notes && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Notes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm">{selectedAppointment.notes}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+                    Close
+                  </Button>
+                  <div className="flex gap-2">
+                    {selectedAppointment.status === 'SCHEDULED' && (
+                      <>
+                        <Button 
+                          variant="outline"
+                          onClick={() => handleUpdateStatus(selectedAppointment.id, 'CANCELLED')}
+                        >
+                          Cancel Appointment
+                        </Button>
+                        <Button 
+                          onClick={() => handleUpdateStatus(selectedAppointment.id, 'COMPLETED')}
+                        >
+                          Mark as Completed
+                        </Button>
+                      </>
+                    )}
+                    {selectedAppointment.status === 'CANCELLED' && (
+                      <Button 
+                        onClick={() => handleUpdateStatus(selectedAppointment.id, 'SCHEDULED')}
+                      >
+                        Reschedule
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
@@ -317,7 +446,11 @@ export default function AppointmentScheduling() {
                           {appointment.notes || '-'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewDetails(appointment)}
+                          >
                             View Details
                           </Button>
                         </TableCell>

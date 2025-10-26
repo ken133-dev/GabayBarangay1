@@ -68,7 +68,8 @@ export default function PendingApprovals() {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(user.role);
+  const userRoles = user.roles || [user.role || 'VISITOR'];
+  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
   useEffect(() => {
     if (!isAdmin) {
@@ -87,8 +88,10 @@ export default function PendingApprovals() {
   const fetchPendingUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users?status=PENDING');
-      const pendingUsers = response.data.users || [];
+      const response = await api.get('/admin/users?status=PENDING');
+      const allUsers = response.data.users || [];
+      // Filter to only show PENDING status users
+      const pendingUsers = allUsers.filter((user: PendingUser) => user.status === 'PENDING');
       setUsers(pendingUsers);
       setFilteredUsers(pendingUsers);
     } catch (error) {
@@ -109,7 +112,7 @@ export default function PendingApprovals() {
       u.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchTerm.toLowerCase())
+      (u.role || 'VISITOR').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     setFilteredUsers(filtered);
@@ -146,13 +149,13 @@ export default function PendingApprovals() {
       setActionLoading(true);
 
       if (actionType === 'approve') {
-        await api.patch(`/users/${selectedUser.id}/status`, { status: 'ACTIVE' });
+        await api.patch(`/admin/users/${selectedUser.id}/status`, { status: 'ACTIVE' });
         setUsers(users.filter(u => u.id !== selectedUser.id));
         toast.success('User approved successfully', {
           description: `${selectedUser.firstName} ${selectedUser.lastName} has been activated.`
         });
       } else {
-        await api.patch(`/users/${selectedUser.id}/status`, { status: 'REJECTED', reason: rejectionReason });
+        await api.patch(`/admin/users/${selectedUser.id}/status`, { status: 'REJECTED', reason: rejectionReason });
         setUsers(users.filter(u => u.id !== selectedUser.id));
         toast.success('User rejected', {
           description: 'The user has been notified of the rejection.'
@@ -354,8 +357,8 @@ export default function PendingApprovals() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
-                            {user.role.replace('_', ' ')}
+                          <Badge variant="outline" className={getRoleBadgeColor(user.role || 'VISITOR')}>
+                            {(user.role || 'VISITOR').replace('_', ' ')}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -437,8 +440,8 @@ export default function PendingApprovals() {
                   <div className="font-semibold text-lg">
                     {selectedUser.firstName} {selectedUser.lastName}
                   </div>
-                  <Badge variant="outline" className={getRoleBadgeColor(selectedUser.role)}>
-                    {selectedUser.role.replace('_', ' ')}
+                  <Badge variant="outline" className={getRoleBadgeColor(selectedUser.role || 'VISITOR')}>
+                    {(selectedUser.role || 'VISITOR').replace('_', ' ')}
                   </Badge>
                 </div>
               </div>

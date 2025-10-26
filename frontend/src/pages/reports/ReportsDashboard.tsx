@@ -82,148 +82,85 @@ export default function ReportsDashboard() {
       setLoading(true);
 
       // Try to fetch from multiple endpoints and combine data
-      const [healthResponse, daycareResponse, eventsResponse] = await Promise.allSettled([
+      const [healthResponse, daycareResponse, eventsResponse, analyticsResponse] = await Promise.allSettled([
         api.get('/reports/health'),
         api.get('/reports/daycare'), 
-        api.get('/reports/sk')
+        api.get('/reports/sk'),
+        api.get('/reports/cross-module')
       ]);
 
       // Extract data from successful responses
       const healthData = healthResponse.status === 'fulfilled' ? healthResponse.value.data.report : null;
       const daycareData = daycareResponse.status === 'fulfilled' ? daycareResponse.value.data.report : null;
       const eventsData = eventsResponse.status === 'fulfilled' ? eventsResponse.value.data.report : null;
+      const analyticsData = analyticsResponse.status === 'fulfilled' ? analyticsResponse.value.data.analytics : null;
 
       // Combine into dashboard stats format
       const combinedStats: DashboardStats = {
         summary: {
-          totalUsers: 156,
-          totalPatients: healthData?.summary?.totalPatients || 89,
-          totalAppointments: healthData?.summary?.totalAppointments || 234,
-          totalStudents: daycareData?.summary?.totalStudents || 34,
-          totalEvents: eventsData?.summary?.totalEvents || 12
+          totalUsers: analyticsData?.overview?.totalUsers || 0,
+          totalPatients: healthData?.summary?.totalPatients || 0,
+          totalAppointments: healthData?.summary?.totalAppointments || 0,
+          totalStudents: daycareData?.summary?.totalStudents || 0,
+          totalEvents: eventsData?.summary?.totalEvents || 0
         },
         healthServices: healthData?.summary ? {
-          totalPatients: healthData.summary.totalPatients || 89,
-          totalAppointments: healthData.summary.totalAppointments || 234,
-          scheduledAppointments: healthData.summary.scheduledAppointments || 45,
-          completedAppointments: healthData.summary.completedAppointments || 189,
-          totalVaccinations: healthData.summary.totalVaccinations || 156
+          totalPatients: healthData.summary.totalPatients || 0,
+          totalAppointments: healthData.summary.totalAppointments || 0,
+          scheduledAppointments: healthData.summary.scheduledAppointments || 0,
+          completedAppointments: healthData.summary.completedAppointments || 0,
+          totalVaccinations: healthData.summary.totalVaccinations || 0
         } : {
-          totalPatients: 89,
-          totalAppointments: 234,
-          scheduledAppointments: 45,
-          completedAppointments: 189,
-          totalVaccinations: 156
+          totalPatients: 0,
+          totalAppointments: 0,
+          scheduledAppointments: 0,
+          completedAppointments: 0,
+          totalVaccinations: 0
         },
         daycareServices: daycareData?.summary ? {
-          totalStudents: daycareData.summary.totalStudents || 34,
-          totalRegistrations: daycareData.summary.totalRegistrations || 42,
-          approvedRegistrations: daycareData.summary.approvedRegistrations || 34,
-          pendingRegistrations: daycareData.summary.pendingRegistrations || 8,
-          averageAttendanceRate: daycareData.summary.averageAttendanceRate || 92.5
+          totalStudents: daycareData.summary.totalStudents || 0,
+          totalRegistrations: daycareData.summary.totalRegistrations || 0,
+          approvedRegistrations: daycareData.summary.approvedRegistrations || 0,
+          pendingRegistrations: daycareData.summary.pendingRegistrations || 0,
+          averageAttendanceRate: daycareData.summary.averageAttendanceRate || 0
         } : {
-          totalStudents: 34,
-          totalRegistrations: 42,
-          approvedRegistrations: 34,
-          pendingRegistrations: 8,
-          averageAttendanceRate: 92.5
+          totalStudents: 0,
+          totalRegistrations: 0,
+          approvedRegistrations: 0,
+          pendingRegistrations: 0,
+          averageAttendanceRate: 0
         },
         skEngagement: eventsData?.summary ? {
-          totalEvents: eventsData.summary.totalEvents || 12,
-          publishedEvents: eventsData.summary.publishedEvents || 10,
-          completedEvents: eventsData.summary.completedEvents || 8,
-          totalRegistrations: eventsData.summary.totalRegistrations || 156,
-          totalAttendance: eventsData.summary.totalAttendance || 134,
-          averageAttendanceRate: eventsData.summary.averageAttendanceRate || 85.9
+          totalEvents: eventsData.summary.totalEvents || 0,
+          publishedEvents: eventsData.summary.publishedEvents || 0,
+          completedEvents: eventsData.summary.completedEvents || 0,
+          totalRegistrations: eventsData.summary.totalRegistrations || 0,
+          totalAttendance: eventsData.summary.totalAttendance || 0,
+          averageAttendanceRate: eventsData.summary.averageAttendanceRate || 0
         } : {
-          totalEvents: 12,
-          publishedEvents: 10,
-          completedEvents: 8,
-          totalRegistrations: 156,
-          totalAttendance: 134,
-          averageAttendanceRate: 85.9
+          totalEvents: 0,
+          publishedEvents: 0,
+          completedEvents: 0,
+          totalRegistrations: 0,
+          totalAttendance: 0,
+          averageAttendanceRate: 0
         }
       };
 
       setStats(combinedStats);
 
-      // Generate mock trend data
-      const mockTrends: TrendData = {
-        appointments: [
-          { month: 'Jan', count: 45 },
-          { month: 'Feb', count: 52 },
-          { month: 'Mar', count: 48 },
-          { month: 'Apr', count: 61 },
-          { month: 'May', count: 55 },
-          { month: 'Jun', count: 67 }
-        ],
-        enrollments: [
-          { month: 'Jan', count: 8 },
-          { month: 'Feb', count: 12 },
-          { month: 'Mar', count: 6 },
-          { month: 'Apr', count: 15 },
-          { month: 'May', count: 9 },
-          { month: 'Jun', count: 11 }
-        ],
-        events: [
-          { month: 'Jan', count: 2 },
-          { month: 'Feb', count: 3 },
-          { month: 'Mar', count: 1 },
-          { month: 'Apr', count: 4 },
-          { month: 'May', count: 2 },
-          { month: 'Jun', count: 3 }
-        ],
-        registrations: [
-          { month: 'Jan', count: 25 },
-          { month: 'Feb', count: 32 },
-          { month: 'Mar', count: 28 },
-          { month: 'Apr', count: 35 },
-          { month: 'May', count: 30 },
-          { month: 'Jun', count: 38 }
-        ]
+      // Use real trend data from API responses
+      const realTrends: TrendData = {
+        appointments: healthData?.appointments?.monthlyTrends || [],
+        enrollments: daycareData?.registrations?.monthlyTrends || [],
+        events: eventsData?.participation?.registrationVsAttendance?.map((item: any) => ({ month: item.month, count: item.registrations })) || [],
+        registrations: eventsData?.participation?.registrationVsAttendance || []
       };
 
-      setTrends(mockTrends);
+      setTrends(realTrends);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Provide fallback data even on error
-      setStats({
-        summary: {
-          totalUsers: 156,
-          totalPatients: 89,
-          totalAppointments: 234,
-          totalStudents: 34,
-          totalEvents: 12
-        },
-        healthServices: {
-          totalPatients: 89,
-          totalAppointments: 234,
-          scheduledAppointments: 45,
-          completedAppointments: 189,
-          totalVaccinations: 156
-        },
-        daycareServices: {
-          totalStudents: 34,
-          totalRegistrations: 42,
-          approvedRegistrations: 34,
-          pendingRegistrations: 8,
-          averageAttendanceRate: 92.5
-        },
-        skEngagement: {
-          totalEvents: 12,
-          publishedEvents: 10,
-          completedEvents: 8,
-          totalRegistrations: 156,
-          totalAttendance: 134,
-          averageAttendanceRate: 85.9
-        }
-      });
-      setTrends({
-        appointments: [{ month: 'Jun', count: 67 }],
-        enrollments: [{ month: 'Jun', count: 11 }],
-        events: [{ month: 'Jun', count: 3 }],
-        registrations: [{ month: 'Jun', count: 38 }]
-      });
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -297,16 +234,6 @@ export default function ReportsDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={trendMonths} onValueChange={setTrendMonths}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">Last 3 months</SelectItem>
-                <SelectItem value="6">Last 6 months</SelectItem>
-                <SelectItem value="12">Last 12 months</SelectItem>
-              </SelectContent>
-            </Select>
 
             <Button
               variant="outline"

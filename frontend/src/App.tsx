@@ -20,18 +20,24 @@ import AppointmentScheduling from './pages/health/AppointmentScheduling';
 import HealthRecords from './pages/health/HealthRecords';
 import VaccinationTracking from './pages/health/VaccinationTracking';
 import CertificateGenerator from './pages/health/CertificateGenerator';
+import MyHealthRecords from './pages/health/MyHealthRecords';
 
 // Daycare Module
 import DaycareDashboard from './pages/daycare/DaycareDashboard';
+import ChildRegistrationForm from './pages/daycare/ChildRegistrationForm';
 import StudentRegistration from './pages/daycare/StudentRegistration';
 import AttendanceTracking from './pages/daycare/AttendanceTracking';
+import MyChildrenProgress from './pages/daycare/MyChildrenProgress';
 import ProgressReports from './pages/daycare/ProgressReports';
+import EducationalResources from './pages/daycare/EducationalResources';
 import LearningMaterials from './pages/daycare/LearningMaterials';
 
 // SK Engagement Module
 import SKDashboard from './pages/sk/SKDashboard';
 import EventManagement from './pages/sk/EventManagement';
+import EventDetails from './pages/sk/EventDetails';
 import EventRegistration from './pages/sk/EventRegistration';
+import MyEventRegistrations from './pages/sk/MyEventRegistrations';
 import AttendanceAnalytics from './pages/sk/AttendanceAnalytics';
 import SKAnalytics from './pages/sk/SKAnalytics';
 
@@ -60,6 +66,7 @@ import HealthReports from './pages/reports/HealthReports';
 import DaycareReports from './pages/reports/DaycareReports';
 import SKReports from './pages/reports/SKReports';
 import CrossModuleAnalytics from './pages/reports/CrossModuleAnalytics';
+import HealthStats from './pages/reports/HealthStats';
 
 
 function App() {
@@ -120,8 +127,13 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/health/records" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.PATIENT]}>
+              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
                 <HealthRecords />
+              </ProtectedRoute>
+            } />
+            <Route path="/health/my-records" element={
+              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+                <MyHealthRecords />
               </ProtectedRoute>
             } />
             <Route path="/health/vaccinations" element={
@@ -141,6 +153,11 @@ function App() {
                 <DaycareDashboard />
               </ProtectedRoute>
             } />
+            <Route path="/daycare/registration" element={
+              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+                <ChildRegistrationForm />
+              </ProtectedRoute>
+            } />
             <Route path="/daycare/registrations" element={
               <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
                 <StudentRegistration />
@@ -151,9 +168,19 @@ function App() {
                 <AttendanceTracking />
               </ProtectedRoute>
             } />
+            <Route path="/daycare/progress" element={
+              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+                <MyChildrenProgress />
+              </ProtectedRoute>
+            } />
             <Route path="/daycare/progress-reports" element={
               <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
                 <ProgressReports />
+              </ProtectedRoute>
+            } />
+            <Route path="/daycare/resources" element={
+              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+                <EducationalResources />
               </ProtectedRoute>
             } />
             <Route path="/daycare/materials" element={
@@ -173,9 +200,19 @@ function App() {
                 <EventManagement />
               </ProtectedRoute>
             } />
+            <Route path="/sk/events/:id" element={
+              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+                <EventDetails />
+              </ProtectedRoute>
+            } />
             <Route path="/sk/event-registration" element={
               <ProtectedRoute>
                 <EventRegistration />
+              </ProtectedRoute>
+            } />
+            <Route path="/events/my-registrations" element={
+              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+                <MyEventRegistrations />
               </ProtectedRoute>
             } />
             <Route path="/sk/attendance" element={
@@ -260,6 +297,11 @@ function App() {
             <Route path="/reports/analytics" element={
               <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
                 <CrossModuleAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports/health/stats" element={
+              <ProtectedRoute allowedRoles={[UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+                <HealthStats />
               </ProtectedRoute>
             } />
 

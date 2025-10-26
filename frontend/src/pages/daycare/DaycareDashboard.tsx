@@ -22,7 +22,10 @@ export default function DaycareDashboard() {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (!['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(parsedUser.role)) {
+    // Get user roles (support both single role and multi-role)
+    const userRoles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+    
+    if (!userRoles.some((role: string) => ['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))) {
       navigate('/dashboard');
       return;
     }
@@ -41,11 +44,11 @@ export default function DaycareDashboard() {
       });
       
       // Convert monthly trend to chart data
-      const monthlyTrend = report?.registrations?.monthlyTrend || {};
-      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
-        name: month,
-        registrations: count,
-        students: Math.floor((count as number) * 0.9) // Estimate students from registrations
+      const monthlyTrend = report?.registrations?.monthlyTrends || [];
+      const chartData = monthlyTrend.map((item: any) => ({
+        name: item.month,
+        registrations: item.count,
+        students: report?.summary?.totalStudents || 0
       }));
       setChartData(chartData);
     } catch (error) {

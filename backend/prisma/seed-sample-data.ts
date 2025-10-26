@@ -7,9 +7,9 @@ async function main() {
   console.log('🌱 Starting sample data seeding...');
 
   // Get existing users
-  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@theycare.local' } });
-  const bhwUser = await prisma.user.findUnique({ where: { email: 'bhw@theycare.local' } });
-  const residentUser = await prisma.user.findUnique({ where: { email: 'resident@theycare.local' } });
+  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@theycare.com' } });
+  const bhwUser = await prisma.user.findUnique({ where: { email: 'bhw@theycare.com' } });
+  const residentUser = await prisma.user.findUnique({ where: { email: 'parent@theycare.com' } });
 
   if (!adminUser || !bhwUser || !residentUser) {
     console.log('❌ Base users not found. Run the main seed first: npm run prisma:seed');
@@ -111,40 +111,38 @@ async function main() {
   ]);
   console.log('✅ Created sample appointments');
 
-  // Create sample health records
-  console.log('🏥 Creating sample health records...');
+  // Create sample immunization records
+  console.log('🏥 Creating sample immunization records...');
   await Promise.all([
-    prisma.healthRecord.upsert({
+    prisma.immunizationRecord.upsert({
       where: { id: 'sample-record-1' },
       update: {},
       create: {
         id: 'sample-record-1',
         patientId: patients[0].id,
-        recordDate: new Date(),
-        diagnosis: 'Healthy pregnancy',
-        treatment: 'Prenatal vitamins prescribed',
-        medications: 'Folic acid, Iron supplements',
-        vitalSigns: {
-          bloodPressure: '120/80',
-          temperature: '36.5',
-          heartRate: '72',
-          weight: '65'
-        },
-        notes: 'Patient is doing well'
+        vaccineName: 'Prenatal Checkup',
+        vaccineType: 'HEALTH_CHECK',
+        dateGiven: new Date(),
+        ageAtVaccination: '35 years',
+        administeredBy: bhwUser.firstName + ' ' + bhwUser.lastName,
+        recordedBy: bhwUser.id,
+        doseNumber: 1,
+        isCompleted: true,
+        notes: 'Patient is doing well - healthy pregnancy'
       }
     })
   ]);
-  console.log('✅ Created sample health records');
+  console.log('✅ Created sample immunization records');
 
-  // Create sample vaccinations
-  console.log('💉 Creating sample vaccinations...');
+  // Create sample immunization records
+  console.log('💉 Creating sample immunization records...');
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const oneMonthFromNow = new Date();
   oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
   await Promise.all([
-    prisma.vaccination.upsert({
+    prisma.immunizationRecord.upsert({
       where: { id: 'sample-vacc-1' },
       update: {},
       create: {
@@ -154,12 +152,16 @@ async function main() {
         vaccineType: 'MMR',
         dosage: '0.5ml',
         dateGiven: yesterday,
-        nextDueDate: oneMonthFromNow,
+        ageAtVaccination: '4 years',
         administeredBy: bhwUser.firstName + ' ' + bhwUser.lastName,
-        batchNumber: 'MMR2024-001'
+        recordedBy: bhwUser.id,
+        doseNumber: 1,
+        nextDueDate: oneMonthFromNow,
+        batchNumber: 'MMR2024-001',
+        isCompleted: true
       }
     }),
-    prisma.vaccination.upsert({
+    prisma.immunizationRecord.upsert({
       where: { id: 'sample-vacc-2' },
       update: {},
       create: {
@@ -169,12 +171,16 @@ async function main() {
         vaccineType: 'BCG',
         dosage: '0.1ml',
         dateGiven: new Date('2020-04-01'),
+        ageAtVaccination: '3 months',
         administeredBy: bhwUser.firstName + ' ' + bhwUser.lastName,
-        batchNumber: 'BCG2020-045'
+        recordedBy: bhwUser.id,
+        doseNumber: 1,
+        batchNumber: 'BCG2020-045',
+        isCompleted: true
       }
     })
   ]);
-  console.log('✅ Created sample vaccinations');
+  console.log('✅ Created sample immunization records');
 
   // Create sample events
   console.log('📅 Creating sample SK events...');
@@ -417,8 +423,7 @@ async function main() {
   console.log('\n📊 Summary:');
   console.log(`   Patients: ${patients.length}`);
   console.log(`   Appointments: 2`);
-  console.log(`   Health Records: 1`);
-  console.log(`   Vaccinations: 2`);
+  console.log(`   Immunization Records: 3`);
   console.log(`   Events: ${events.length}`);
   console.log(`   Event Registrations: 1`);
   console.log(`   Daycare Students: ${students.length}`);
@@ -430,7 +435,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error('❌ Sample data seeding error:', e);
-    process.exit(1);
+    throw e;
   })
   .finally(async () => {
     await prisma.$disconnect();

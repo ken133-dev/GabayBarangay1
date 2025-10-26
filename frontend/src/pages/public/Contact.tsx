@@ -7,11 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/sonner';
-import { Mail, Phone, MapPin, Clock, ArrowRight, Sparkles } from 'lucide-react';
-
-import { useNavigate } from 'react-router-dom';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Separator } from '@/components/ui/separator';
+import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import PublicLayout from '@/components/PublicLayout';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -23,7 +20,6 @@ export default function Contact() {
     hours: ''
   });
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Set static contact info to avoid authentication issues
@@ -52,53 +48,8 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen">
+    <PublicLayout>
       <Toaster />
-
-      {/* Modern Sticky Header with Glass Effect */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/theycare.png" alt="TheyCare" className="h-10 w-10" />
-            <div className="flex flex-col">
-              <span className="font-bold text-xl leading-none text-primary">
-                TheyCare
-              </span>
-              <span className="text-xs text-muted-foreground leading-none">Portal Binitayan</span>
-            </div>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-sm font-medium text-foreground hover:text-primary transition-colors relative group">
-              Features
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a href="/#services" className="text-sm font-medium text-foreground hover:text-primary transition-colors relative group">
-              Services
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a href="/announcements" className="text-sm font-medium text-foreground hover:text-primary transition-colors relative group">
-              Announcements
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a href="/contact" className="text-sm font-medium text-foreground hover:text-primary transition-colors relative group">
-              Contact
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate('/login')} className="hidden sm:inline-flex">
-              Login
-            </Button>
-            <Button onClick={() => navigate('/register')} className="gap-2">
-              Get Started
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -236,76 +187,6 @@ export default function Contact() {
         </section>
       </main>
 
-      {/* Modern Footer */}
-      <footer className="border-t bg-card">
-        <div className="container mx-auto py-12 md:py-16 px-4 md:px-6">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <Sparkles className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-bold text-lg">TheyCare Portal</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                A Progressive Web-Based Management System for Barangay Binitayan, 
-                enhancing maternal health, daycare education, and youth engagement.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Core Services</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Maternal Health Tracking</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Daycare Management</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">SK Youth Programs</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Digital Certificates</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/announcements" className="hover:text-primary transition-colors">Announcements</a></li>
-                <li><a href="/events/public" className="hover:text-primary transition-colors">Community Events</a></li>
-                <li><a href="/contact" className="hover:text-primary transition-colors">Contact Support</a></li>
-                <li><a href="/about" className="hover:text-primary transition-colors">About Project</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Data Protection</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="my-8" />
-
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © 2025 TheyCare Portal - Barangay Binitayan, Daraga, Albay. Capstone Project for BS Information Technology.
-            </p>
-            <div className="flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <span className="sr-only">Facebook</span>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-                </svg>
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <span className="sr-only">Twitter</span>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </PublicLayout>
   );
 }

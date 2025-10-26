@@ -10,7 +10,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
+        roles: true,
         status: true,
         createdAt: true
       },
@@ -37,7 +37,7 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
+        roles: true,
         status: true
       }
     });

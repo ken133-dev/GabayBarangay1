@@ -6,10 +6,12 @@ import type { User, AuthResponse } from '@/types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requiresOTP: boolean }>;
   logout: () => void;
   register: (data: RegisterData) => Promise<void>;
   updateUser: (user: User) => void;
+  sendOTP: (email: string) => Promise<void>;
+  verifyOTP: (email: string, otp: string) => Promise<void>;
 }
 
 interface RegisterData {
@@ -61,11 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await api.post<AuthResponse>('/auth/login', { email, password });
 
-    const { token, user } = response.data;
+    const { token, user, requiresOTP } = response.data;
 
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setUser(user);
+    if (!requiresOTP) {
+      // Direct login without OTP
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+    }
+
+    return { requiresOTP: requiresOTP || false };
   };
 
   const logout = () => {
@@ -80,13 +87,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Don't auto-login after registration since account needs approval
   };
 
+  const sendOTP = async (email: string) => {
+    await api.post('/auth/send-otp', { email });
+  };
+
+  const verifyOTP = async (email: string, otp: string) => {
+    const response = await api.post('/auth/verify-otp', { email, otp });
+    const { token, user } = response.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    setUser(user);
+  };
+
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, updateUser, sendOTP, verifyOTP }}>
       {children}
     </AuthContext.Provider>
   );

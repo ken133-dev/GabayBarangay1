@@ -73,7 +73,8 @@ export default function AuditLogs() {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(user.role);
+  const userRoles = user.roles || [user.role || 'VISITOR'];
+  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
   useEffect(() => {
     if (!isAdmin) {

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { AppSidebar } from '@/components/app-sidebar';
+import { MultiRoleSidebar } from '@/components/multi-role-sidebar';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,7 +25,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, currentPage }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <MultiRoleSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -38,7 +38,7 @@ export default function DashboardLayout({ children, currentPage }: DashboardLayo
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
-                    TheyCare Portal
+                    Gabay Barangay
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />

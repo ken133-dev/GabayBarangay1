@@ -55,26 +55,26 @@
 
 - **As a BHW**, I want to schedule prenatal check-ups and track appointment status so that I can ensure timely care for pregnant women.
 
-- **As a BHW**, I want to record vaccination details and generate immunization certificates so that parents have proof of vaccination.
+- **As a BHW**, I want to record immunization details and generate immunization e-cards so that parents have digital proof of vaccination.
 
-- **As a Patient**, I want to view my health appointment schedule and access my e-health card so that I can keep track of my medical visits.
+- **As a Parent/Resident**, I want to view my health appointment schedule and access my immunization e-card so that I can keep track of my medical visits.
 
 ### Features
 
 - Patient Registry
 - Appointment Scheduling
-- Health Records Management
-- E-Card Generation
+- Immunization Records Management
+- Immunization E-Card Generation
 - Certificate Generation
-- Vaccination Tracking
+
 
 ### Pages
 
 - Patient Management Page
 - Appointment Scheduling Page
-- Health Records Page
+- Immunization Cards Page
 - Certificate Generator Page
-- Vaccination Tracker Page
+
 
 ---
 
@@ -245,6 +245,5 @@ The system supports the following user roles:
 - **Daycare Staff/Teacher**: Daycare management and attendance
 - **SK Officer**: Event management and youth engagement
 - **SK Chairman**: SK analytics and reporting
-- **Parent/Resident**: Access to public services and personal records
-- **Patient**: View health appointments and records
+- **Parent/Resident**: Access to public services, personal records, and health services when registered as patient
 - **Visitor**: Public portal access only

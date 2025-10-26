@@ -1,14 +1,14 @@
-# TheyCare Portal: Presentation and Demo Guide
+# Gabay Barangay: Presentation and Demo Guide
 
-This guide provides a comprehensive walkthrough for presenting and demoing the TheyCare Portal system. It covers key features, a suggested demo flow, and a special focus on showcasing the Progressive Web App (PWA) functionality.
+This guide provides a comprehensive walkthrough for presenting and demoing the Gabay Barangay system. It covers key features, a suggested demo flow, and a special focus on showcasing the Progressive Web App (PWA) functionality.
 
 ## 1. Introduction
 
 **(Start with a brief, engaging introduction about the project.)**
 
-"Good day, everyone. Today, I'm excited to present TheyCare Portal, a comprehensive Barangay Management System designed to streamline and modernize local government services. Our goal with this project is to empower barangay officials, healthcare workers, and community leaders with a centralized platform to manage health services, daycare operations, and youth engagement programs efficiently.
+"Good day, everyone. Today, I'm excited to present Gabay Barangay, a comprehensive Barangay Management System designed to streamline and modernize local government services. Our goal with this project is to empower barangay officials, healthcare workers, and community leaders with a centralized platform to manage health services, daycare operations, and youth engagement programs efficiently.
 
-TheyCare Portal is a full-stack application built with a modern tech stack, featuring a user-friendly React frontend and a robust Node.js backend. It's designed to be accessible, secure, and reliable, with a key feature being its Progressive Web App (PWA) capabilities, which I'll be showcasing today."
+Gabay Barangay is a full-stack application built with a modern tech stack, featuring a user-friendly React frontend and a robust Node.js backend. It's designed to be accessible, secure, and reliable, with a key feature being its Progressive Web App (PWA) capabilities, which I'll be showcasing today."
 
 ## 2. Key Features to Showcase
 
@@ -141,4 +141,4 @@ Be prepared for questions from the audience. Here are some potential questions a
 *   **Q: How do you handle data privacy?**
     *   A: "Data privacy is a top priority. We have a role-based access control system in place to ensure that only authorized users can access sensitive information. All data is stored securely in the database."
 
-By following this guide, you'll be well-prepared to deliver a professional and comprehensive presentation and demo of the TheyCare Portal system.
+By following this guide, you'll be well-prepared to deliver a professional and comprehensive presentation and demo of the Gabay Barangay system.

@@ -10,38 +10,62 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Patient } from '@/types';
 
-interface HealthRecord {
+interface ImmunizationRecord {
   id: string;
   patientId: string;
   patient?: Patient;
-  recordDate: string;
-  diagnosis?: string;
-  treatment?: string;
-  medications?: string;
-  vital_signs?: any;
+  vaccineName: string;
+  vaccineType: string;
+  manufacturer?: string;
+  lotNumber?: string;
+  dosage?: string;
+  dateGiven: string;
+  ageAtVaccination?: string;
+  siteOfAdministration?: string;
+  administeredBy: string;
+  doseNumber?: number;
+  nextDueDate?: string;
+  batchNumber?: string;
+  expirationDate?: string;
+  adverseReactions?: string;
   notes?: string;
 }
 
 export default function HealthRecords() {
-  const [records, setRecords] = useState<HealthRecord[]>([]);
+  const [records, setRecords] = useState<ImmunizationRecord[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState('');
+  const [filterPatient, setFilterPatient] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Get user role to determine interface
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRoles = user.roles || [user.role];
+  const isPatient = userRoles.includes('PARENT_RESIDENT');
+  const isHealthWorker = userRoles.some((role: string) => ['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'].includes(role));
   const [formData, setFormData] = useState({
-    diagnosis: '',
-    treatment: '',
-    medications: '',
-    bloodPressure: '',
-    temperature: '',
-    heartRate: '',
-    weight: '',
+    vaccineName: '',
+    vaccineType: '',
+    manufacturer: '',
+    lotNumber: '',
+    dosage: '',
+    dateGiven: '',
+    ageAtVaccination: '',
+    siteOfAdministration: '',
+    administeredBy: '',
+    doseNumber: '',
+    nextDueDate: '',
+    batchNumber: '',
+    expirationDate: '',
+    adverseReactions: '',
     notes: ''
   });
 
   useEffect(() => {
     fetchPatients();
-    // fetchRecords(); // Will implement when backend endpoint is ready
+    fetchRecords();
   }, []);
 
   const fetchPatients = async () => {
@@ -50,9 +74,34 @@ export default function HealthRecords() {
       setPatients(response.data.patients || []);
     } catch (error) {
       toast.error('Failed to fetch patients');
+    }
+  };
+
+  const fetchRecords = async () => {
+    try {
+      let endpoint = '/health/immunization-records';
+      if (isPatient) {
+        // For patients, only fetch their own records
+        endpoint = `/health/immunization-records/my`;
+      }
+      const response = await api.get(endpoint);
+      setRecords(response.data.immunizationRecords || []);
+    } catch (error) {
+      console.error('Failed to fetch immunization records:', error);
+      toast.error('Failed to fetch immunization records');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRecordStatus = (record: ImmunizationRecord) => {
+    if (!record.nextDueDate) return 'completed';
+    const today = new Date();
+    const dueDate = new Date(record.nextDueDate);
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return 'overdue';
+    if (diffDays <= 30) return 'due-soon';
+    return 'scheduled';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,37 +113,48 @@ export default function HealthRecords() {
     }
 
     try {
-      const vital_signs = {
-        bloodPressure: formData.bloodPressure,
-        temperature: formData.temperature,
-        heartRate: formData.heartRate,
-        weight: formData.weight
-      };
-
-      await api.post('/health/records', {
+      await api.post('/health/immunization-records', {
         patientId: selectedPatient,
-        diagnosis: formData.diagnosis,
-        treatment: formData.treatment,
-        medications: formData.medications,
-        vital_signs,
+        vaccineName: formData.vaccineName,
+        vaccineType: formData.vaccineType,
+        manufacturer: formData.manufacturer,
+        lotNumber: formData.lotNumber,
+        dosage: formData.dosage,
+        dateGiven: formData.dateGiven,
+        ageAtVaccination: formData.ageAtVaccination,
+        siteOfAdministration: formData.siteOfAdministration,
+        administeredBy: formData.administeredBy,
+        doseNumber: formData.doseNumber ? parseInt(formData.doseNumber) : null,
+        nextDueDate: formData.nextDueDate || null,
+        batchNumber: formData.batchNumber,
+        expirationDate: formData.expirationDate || null,
+        adverseReactions: formData.adverseReactions,
         notes: formData.notes
       });
 
-      toast.success('Health record created successfully!');
+      toast.success('Immunization record created successfully!');
       setShowDialog(false);
       setFormData({
-        diagnosis: '',
-        treatment: '',
-        medications: '',
-        bloodPressure: '',
-        temperature: '',
-        heartRate: '',
-        weight: '',
+        vaccineName: '',
+        vaccineType: '',
+        manufacturer: '',
+        lotNumber: '',
+        dosage: '',
+        dateGiven: '',
+        ageAtVaccination: '',
+        siteOfAdministration: '',
+        administeredBy: '',
+        doseNumber: '',
+        nextDueDate: '',
+        batchNumber: '',
+        expirationDate: '',
+        adverseReactions: '',
         notes: ''
       });
       setSelectedPatient('');
+      fetchRecords();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to create health record');
+      toast.error(error.response?.data?.error || 'Failed to create immunization record');
     }
   };
 
@@ -103,82 +163,177 @@ export default function HealthRecords() {
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Health Records</h1>
-            <p className="text-gray-600 mt-1">Digital health records management</p>
+            <h1 className="text-3xl font-bold">
+              {isPatient ? 'My Immunization Records' : 'Immunization Cards'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {isPatient ? 'View your immunization history and e-cards' : 'Digital immunization card management'}
+            </p>
           </div>
-          <Button onClick={() => setShowDialog(true)}>
-            Add Health Record
-          </Button>
+          {isHealthWorker && (
+            <Button onClick={() => setShowDialog(true)}>
+              Add Immunization Record
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">Total Records</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {isPatient ? 'My Records' : 'Total Records'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{records.length}</p>
             </CardContent>
           </Card>
+          {isHealthWorker && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">Registered Patients</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{patients.length}</p>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">Registered Patients</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {isPatient ? 'Recent Vaccines' : 'This Month'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{patients.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">This Month</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-2xl font-bold">
+                {records.filter(record => {
+                  const recordDate = new Date(record.dateGiven);
+                  const now = new Date();
+                  return recordDate.getMonth() === now.getMonth() && recordDate.getFullYear() === now.getFullYear();
+                }).length}
+              </p>
             </CardContent>
           </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Health Records</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>
+                {isPatient ? 'My Immunization History' : 'Immunization Records'}
+              </CardTitle>
+              {isHealthWorker && (
+                <div className="flex gap-2 items-center">
+                  <Select value={filterPatient} onValueChange={setFilterPatient}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="All patients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All patients</SelectItem>
+                      {patients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          {patient.firstName} {patient.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="All status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All status</SelectItem>
+                      <SelectItem value="due-soon">Due Soon</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p>Loading records...</p>
             ) : records.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No health records yet.</p>
-                <p className="text-sm text-gray-500 mt-2">Click "Add Health Record" to create the first record.</p>
+                <p className="text-muted-foreground">
+                  {isPatient ? 'No immunization records found.' : 'No immunization records yet.'}
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {isPatient ? 'Contact your health worker if you believe this is incorrect.' : 'Click "Add Immunization Record" to create the first record.'}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {records.map((record) => (
+                {records.filter(record => {
+                  const patientMatch = filterPatient === 'all' || record.patientId === filterPatient;
+                  const status = getRecordStatus(record);
+                  const statusMatch = filterStatus === 'all' || status === filterStatus;
+                  return patientMatch && statusMatch;
+                }).map((record) => (
                   <div key={record.id} className="border p-4 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h3 className="font-semibold">
-                          {record.patient?.firstName} {record.patient?.lastName}
-                        </h3>
+                        {!isPatient && (
+                          <h3 className="font-semibold">
+                            {record.patient?.firstName} {record.patient?.lastName}
+                          </h3>
+                        )}
                         <p className="text-sm text-gray-600 mt-1">
-                          Date: {new Date(record.recordDate).toLocaleDateString()}
+                          Date Given: {new Date(record.dateGiven).toLocaleDateString()}
                         </p>
-                        {record.diagnosis && (
+                        <p className="text-sm mt-2">
+                          <span className="font-medium">Vaccine:</span> {record.vaccineName} ({record.vaccineType})
+                        </p>
+                        {record.ageAtVaccination && (
+                          <p className="text-sm">
+                            <span className="font-medium">Age at Vaccination:</span> {record.ageAtVaccination}
+                          </p>
+                        )}
+                        {record.dosage && (
+                          <p className="text-sm">
+                            <span className="font-medium">Dosage:</span> {record.dosage}
+                          </p>
+                        )}
+                        {record.doseNumber && (
+                          <p className="text-sm">
+                            <span className="font-medium">Dose Number:</span> {record.doseNumber}
+                          </p>
+                        )}
+                        <p className="text-sm">
+                          <span className="font-medium">Administered By:</span> {record.administeredBy}
+                        </p>
+                        {record.siteOfAdministration && (
+                          <p className="text-sm">
+                            <span className="font-medium">Site:</span> {record.siteOfAdministration}
+                          </p>
+                        )}
+                        {record.nextDueDate && (
+                          <p className="text-sm">
+                            <span className="font-medium">Next Due:</span> {new Date(record.nextDueDate).toLocaleDateString()}
+                          </p>
+                        )}
+                        {record.adverseReactions && (
+                          <p className="text-sm mt-2 text-orange-600">
+                            <span className="font-medium">Adverse Reactions:</span> {record.adverseReactions}
+                          </p>
+                        )}
+                        {record.notes && (
                           <p className="text-sm mt-2">
-                            <span className="font-medium">Diagnosis:</span> {record.diagnosis}
-                          </p>
-                        )}
-                        {record.treatment && (
-                          <p className="text-sm">
-                            <span className="font-medium">Treatment:</span> {record.treatment}
-                          </p>
-                        )}
-                        {record.medications && (
-                          <p className="text-sm">
-                            <span className="font-medium">Medications:</span> {record.medications}
+                            <span className="font-medium">Notes:</span> {record.notes}
                           </p>
                         )}
                       </div>
-                      <Badge>Record</Badge>
+                      <div className="flex flex-col gap-2">
+                        <Badge variant="outline">Immunization</Badge>
+                        {record.nextDueDate && new Date(record.nextDueDate) > new Date() && (
+                          <Badge variant="secondary">Next Due</Badge>
+                        )}
+                        <Button variant="ghost" size="sm">
+                          View Details
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -187,10 +342,11 @@ export default function HealthRecords() {
           </CardContent>
         </Card>
 
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        {isHealthWorker && (
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add Health Record</DialogTitle>
+              <DialogTitle>Add Immunization Record</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -209,71 +365,151 @@ export default function HealthRecords() {
                 </Select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Diagnosis</label>
-                <Input
-                  value={formData.diagnosis}
-                  onChange={(e) => setFormData({...formData, diagnosis: e.target.value})}
-                  placeholder="Enter diagnosis"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Vaccine Name *</label>
+                  <Select value={formData.vaccineName} onValueChange={(value) => setFormData({...formData, vaccineName: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select vaccine..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BCG">BCG</SelectItem>
+                      <SelectItem value="Hepatitis B">Hepatitis B</SelectItem>
+                      <SelectItem value="DPT">DPT</SelectItem>
+                      <SelectItem value="OPV">OPV (Polio)</SelectItem>
+                      <SelectItem value="Hib">Hib</SelectItem>
+                      <SelectItem value="PCV">PCV</SelectItem>
+                      <SelectItem value="Measles">Measles</SelectItem>
+                      <SelectItem value="MMR">MMR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Vaccine Type *</label>
+                  <Input
+                    value={formData.vaccineType}
+                    onChange={(e) => setFormData({...formData, vaccineType: e.target.value})}
+                    placeholder="e.g., BCG, DPT, MMR"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Date Given *</label>
+                  <Input
+                    type="date"
+                    value={formData.dateGiven}
+                    onChange={(e) => setFormData({...formData, dateGiven: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Age at Vaccination</label>
+                  <Input
+                    value={formData.ageAtVaccination}
+                    onChange={(e) => setFormData({...formData, ageAtVaccination: e.target.value})}
+                    placeholder="e.g., Birth, 2 months, 1 year"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Dosage</label>
+                  <Input
+                    value={formData.dosage}
+                    onChange={(e) => setFormData({...formData, dosage: e.target.value})}
+                    placeholder="e.g., 0.5ml"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Dose Number</label>
+                  <Input
+                    type="number"
+                    value={formData.doseNumber}
+                    onChange={(e) => setFormData({...formData, doseNumber: e.target.value})}
+                    placeholder="1, 2, 3..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Administered By *</label>
+                  <Input
+                    value={formData.administeredBy}
+                    onChange={(e) => setFormData({...formData, administeredBy: e.target.value})}
+                    placeholder="Healthcare provider name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Site of Administration</label>
+                  <Select value={formData.siteOfAdministration} onValueChange={(value) => setFormData({...formData, siteOfAdministration: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select site..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Left thigh">Left thigh</SelectItem>
+                      <SelectItem value="Right thigh">Right thigh</SelectItem>
+                      <SelectItem value="Left arm">Left arm</SelectItem>
+                      <SelectItem value="Right arm">Right arm</SelectItem>
+                      <SelectItem value="Left deltoid">Left deltoid</SelectItem>
+                      <SelectItem value="Right deltoid">Right deltoid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Manufacturer</label>
+                  <Input
+                    value={formData.manufacturer}
+                    onChange={(e) => setFormData({...formData, manufacturer: e.target.value})}
+                    placeholder="Vaccine manufacturer"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Lot Number</label>
+                  <Input
+                    value={formData.lotNumber}
+                    onChange={(e) => setFormData({...formData, lotNumber: e.target.value})}
+                    placeholder="Lot/batch number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Next Due Date</label>
+                  <Input
+                    type="date"
+                    value={formData.nextDueDate}
+                    onChange={(e) => setFormData({...formData, nextDueDate: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Expiration Date</label>
+                  <Input
+                    type="date"
+                    value={formData.expirationDate}
+                    onChange={(e) => setFormData({...formData, expirationDate: e.target.value})}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium">Treatment</label>
+                <label className="text-sm font-medium">Adverse Reactions</label>
                 <textarea
                   className="w-full p-2 border rounded-md"
-                  rows={3}
-                  value={formData.treatment}
-                  onChange={(e) => setFormData({...formData, treatment: e.target.value})}
-                  placeholder="Describe treatment plan"
+                  rows={2}
+                  value={formData.adverseReactions}
+                  onChange={(e) => setFormData({...formData, adverseReactions: e.target.value})}
+                  placeholder="Any adverse reactions observed"
                 />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Medications</label>
-                <Input
-                  value={formData.medications}
-                  onChange={(e) => setFormData({...formData, medications: e.target.value})}
-                  placeholder="List medications prescribed"
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-3">Vital Signs</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm">Blood Pressure</label>
-                    <Input
-                      value={formData.bloodPressure}
-                      onChange={(e) => setFormData({...formData, bloodPressure: e.target.value})}
-                      placeholder="120/80"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Temperature (°C)</label>
-                    <Input
-                      value={formData.temperature}
-                      onChange={(e) => setFormData({...formData, temperature: e.target.value})}
-                      placeholder="36.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Heart Rate (bpm)</label>
-                    <Input
-                      value={formData.heartRate}
-                      onChange={(e) => setFormData({...formData, heartRate: e.target.value})}
-                      placeholder="72"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Weight (kg)</label>
-                    <Input
-                      value={formData.weight}
-                      onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                      placeholder="65"
-                    />
-                  </div>
-                </div>
               </div>
 
               <div>
@@ -291,11 +527,12 @@ export default function HealthRecords() {
                 <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Save Health Record</Button>
+                <Button type="submit">Save Immunization Record</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
     </DashboardLayout>
   );

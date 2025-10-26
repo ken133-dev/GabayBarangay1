@@ -1,355 +1,281 @@
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import PublicLayout from '@/components/PublicLayout';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { Badge } from '@/components/ui/badge';
 import { 
-  MapPin, Phone, Mail, Users, Heart, Baby, PartyPopper, 
-  ArrowRight, Sparkles, Calendar, Award, Building
+  MapPin, Phone, Mail, Clock, Users, Heart, Baby, 
+  Calendar, Award, Building, Shield, Landmark 
 } from 'lucide-react';
 
+interface BarangayInfo {
+  name: string;
+  description: string;
+  address: string;
+  phone: string;
+  email: string;
+  officeHours: string;
+  population: number;
+  area: string;
+  established: string;
+}
+
+interface Official {
+  id: string;
+  name: string;
+  position: string;
+  photo?: string;
+  term: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  department: string;
+}
+
 export default function AboutBarangay() {
-  const navigate = useNavigate();
+  const [barangayInfo, setBarangayInfo] = useState<BarangayInfo | null>(null);
+  const [officials, setOfficials] = useState<Official[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBarangayInfo();
+  }, []);
+
+  const fetchBarangayInfo = async () => {
+    try {
+      const [infoResponse, officialsResponse, servicesResponse] = await Promise.allSettled([
+        api.get('/public/barangay-info'),
+        api.get('/public/officials'),
+        api.get('/public/services')
+      ]);
+
+      if (infoResponse.status === 'fulfilled') {
+        setBarangayInfo(infoResponse.value.data.info);
+      }
+      if (officialsResponse.status === 'fulfilled') {
+        setOfficials(officialsResponse.value.data.officials || []);
+      }
+      if (servicesResponse.status === 'fulfilled') {
+        setServices(servicesResponse.value.data.services || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch barangay information:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getServiceIcon = (iconName: string) => {
+    const icons: Record<string, any> = {
+      heart: Heart,
+      baby: Baby,
+      calendar: Calendar,
+      users: Users,
+      shield: Shield,
+      building: Building
+    };
+    const IconComponent = icons[iconName] || Building;
+    return <IconComponent className="h-8 w-8" />;
+  };
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/theycare.png" alt="TheyCare" className="h-10 w-10" />
-            <div className="flex flex-col">
-              <span className="font-bold text-xl leading-none text-primary">
-                TheyCare
-              </span>
-              <span className="text-xs text-muted-foreground leading-none">Portal Binitayan</span>
-            </div>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Features
-            </a>
-            <a href="/#services" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Services
-            </a>
-            <a href="/announcements" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Announcements
-            </a>
-            <a href="/about" className="text-sm font-medium text-primary">
-              About
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate('/login')} className="hidden sm:inline-flex">
-              Login
-            </Button>
-            <Button onClick={() => navigate('/register')} className="gap-2">
-              Get Started
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="w-full py-16 md:py-24 bg-muted/30">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center max-w-4xl mx-auto">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
-                <Building className="h-8 w-8 text-primary-foreground" />
+    <PublicLayout>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Barangay Overview */}
+        {barangayInfo && (
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  <Landmark className="h-16 w-16 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold mb-4">{barangayInfo.name}</h1>
+                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                  {barangayInfo.description}
+                </p>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                About Barangay Binitayan
-              </h1>
-              <p className="text-muted-foreground text-lg md:text-xl max-w-2xl">
-                Learn about our community, services, and commitment to serving the residents of Daraga, Albay
-              </p>
-            </div>
-          </div>
-        </section>
 
-        {/* Barangay Information */}
-        <section className="w-full py-12 bg-background">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid gap-8 lg:grid-cols-2 max-w-6xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="h-5 w-5 mr-2" />
-                    Location & Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Address</h4>
-                    <p className="text-muted-foreground">
-                      Barangay Binitayan<br />
-                      Daraga, Albay, Philippines
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Contact Information</h4>
-                    <div className="space-y-2 text-muted-foreground">
-                      <div className="flex items-center">
-                        <Phone className="h-4 w-4 mr-2" />
-                        +63 XXX XXX XXXX
-                      </div>
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2" />
-                        contact@barangaybinitayan.gov.ph
-                      </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+                <div className="text-center">
+                  <Users className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold">{barangayInfo.population.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">Population</div>
+                </div>
+                <div className="text-center">
+                  <MapPin className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold">{barangayInfo.area}</div>
+                  <div className="text-sm text-muted-foreground">Area</div>
+                </div>
+                <div className="text-center">
+                  <Calendar className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold">{barangayInfo.established}</div>
+                  <div className="text-sm text-muted-foreground">Established</div>
+                </div>
+                <div className="text-center">
+                  <Award className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold">A+</div>
+                  <div className="text-sm text-muted-foreground">Rating</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contact Information */}
+        {barangayInfo && (
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div>
+                      <div className="font-medium">Address</div>
+                      <div className="text-muted-foreground">{barangayInfo.address}</div>
                     </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Office Hours</h4>
-                    <p className="text-muted-foreground">
-                      Monday - Friday: 8:00 AM - 5:00 PM<br />
-                      Saturday: 8:00 AM - 12:00 PM<br />
-                      Sunday: Closed
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div>
+                      <div className="font-medium">Phone</div>
+                      <div className="text-muted-foreground">{barangayInfo.phone}</div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Barangay Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Population</h4>
-                    <p className="text-muted-foreground">
-                      Approximately 2,500 residents across 500+ households
-                    </p>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div>
+                      <div className="font-medium">Email</div>
+                      <div className="text-muted-foreground">{barangayInfo.email}</div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Land Area</h4>
-                    <p className="text-muted-foreground">
-                      15.2 square kilometers
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div>
+                      <div className="font-medium">Office Hours</div>
+                      <div className="text-muted-foreground">{barangayInfo.officeHours}</div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Established</h4>
-                    <p className="text-muted-foreground">
-                      1952 - Over 70 years of community service
-                    </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Barangay Officials */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Barangay Officials</h2>
+            {officials.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Official information will be available soon</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {officials.map((official) => (
+                  <div key={official.id} className="text-center">
+                    <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      {official.photo ? (
+                        <img src={official.photo} alt={official.name} className="w-24 h-24 rounded-full object-cover" />
+                      ) : (
+                        <Users className="h-12 w-12 text-gray-400" />
+                      )}
+                    </div>
+                    <h3 className="font-semibold">{official.name}</h3>
+                    <p className="text-sm text-muted-foreground">{official.position}</p>
+                    <Badge variant="outline" className="mt-2">{official.term}</Badge>
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Classification</h4>
-                    <p className="text-muted-foreground">
-                      Rural Barangay - Agricultural and Residential
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Services Overview */}
-        <section className="w-full py-12 bg-muted/30">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Our Services</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Comprehensive services designed to support the health, education, and well-being of our community
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Heart className="h-6 w-6 mr-2 text-red-500" />
-                    Health Services
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm text-muted-foreground space-y-2">
-                    <li>• Maternal and child health programs</li>
-                    <li>• Immunization and vaccination</li>
-                    <li>• Health monitoring and records</li>
-                    <li>• Emergency medical assistance</li>
-                    <li>• Health education and awareness</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Baby className="h-6 w-6 mr-2 text-yellow-500" />
-                    Daycare Services
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm text-muted-foreground space-y-2">
-                    <li>• Early childhood education</li>
-                    <li>• Nutritional feeding programs</li>
-                    <li>• Child development monitoring</li>
-                    <li>• Learning materials and activities</li>
-                    <li>• Parent education and support</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <PartyPopper className="h-6 w-6 mr-2 text-purple-500" />
-                    Youth Programs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm text-muted-foreground space-y-2">
-                    <li>• Sangguniang Kabataan activities</li>
-                    <li>• Sports and recreation programs</li>
-                    <li>• Skills development workshops</li>
-                    <li>• Community service projects</li>
-                    <li>• Leadership training programs</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Mission & Vision */}
-        <section className="w-full py-12 bg-background">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid gap-8 lg:grid-cols-2 max-w-6xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Award className="h-5 w-5 mr-2" />
-                    Our Mission
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
-                    To provide efficient, transparent, and responsive governance that promotes the welfare, 
-                    safety, and development of all residents of Barangay Binitayan through innovative 
-                    programs and services that address community needs and foster sustainable growth.
+        {/* Services */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Our Services</h2>
+            {services.length === 0 ? (
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center p-6 border rounded-lg">
+                  <Heart className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Health Services</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Comprehensive healthcare including prenatal care, immunizations, and health monitoring
                   </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Our Vision
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
-                    A progressive, peaceful, and prosperous barangay where every resident enjoys quality 
-                    health services, educational opportunities, and active participation in community 
-                    development, creating a model community for sustainable living.
+                </div>
+                <div className="text-center p-6 border rounded-lg">
+                  <Baby className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Daycare Services</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Early childhood education and care for children aged 3-5 years
                   </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
+                </div>
+                <div className="text-center p-6 border rounded-lg">
+                  <Calendar className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">SK Programs</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Youth development programs and community engagement activities
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {services.map((service) => (
+                  <div key={service.id} className="text-center p-6 border rounded-lg">
+                    <div className="text-primary mx-auto mb-4">
+                      {getServiceIcon(service.icon)}
+                    </div>
+                    <h3 className="font-semibold mb-2">{service.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                    <Badge variant="outline">{service.department}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Call to Action */}
-        <section className="w-full py-16 bg-primary">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center text-primary-foreground">
-              <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>
-              <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                Experience the convenience of digital barangay services. Register today to access 
-                health services, daycare programs, and community events.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  variant="secondary"
-                  onClick={() => navigate('/register')}
-                  className="gap-2"
-                >
-                  Register Now
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => navigate('/contact')}
-                  className="gap-2 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-                >
-                  Contact Us
-                  <Phone className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t bg-card">
-        <div className="container mx-auto py-12 md:py-16 px-4 md:px-6">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <Sparkles className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-bold text-lg">TheyCare Portal</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Digital barangay services for Binitayan, Daraga, Albay
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/announcements" className="hover:text-primary transition-colors">Announcements</a></li>
-                <li><a href="/events/public" className="hover:text-primary transition-colors">Events</a></li>
-                <li><a href="/contact" className="hover:text-primary transition-colors">Contact</a></li>
-                <li><a href="/about" className="hover:text-primary transition-colors">About</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Services</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Health Services</li>
-                <li>Daycare Programs</li>
-                <li>Youth Activities</li>
-                <li>Community Events</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Contact</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Barangay Binitayan</li>
-                <li>Daraga, Albay</li>
-                <li>+63 XXX XXX XXXX</li>
-                <li>contact@barangaybinitayan.gov.ph</li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="my-8" />
-
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © 2025 TheyCare Portal - Barangay Binitayan. All rights reserved.
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Get Started with Gabay Barangay</h2>
+            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Join our digital community and access all barangay services online. 
+              Register today to schedule appointments, enroll in daycare, and stay updated with community events.
             </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+            <div className="flex gap-4 justify-center">
+              <Button size="lg" onClick={() => window.location.href = '/register'}>
+                Register Now
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => window.location.href = '/login'}>
+                Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </PublicLayout>
   );
 }

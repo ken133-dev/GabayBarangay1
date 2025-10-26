@@ -65,7 +65,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(user.role);
+  const userRoles = user.roles || [user.role || 'VISITOR'];
+  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
   useEffect(() => {
     if (!isAdmin) {
@@ -83,38 +84,6 @@ export default function AdminDashboard() {
       const response = await api.get('/admin/stats');
       const data = response.data.stats;
       
-      // Mock recent activities for now
-      const mockActivities = [
-        {
-          id: '1',
-          action: 'New user registration approved',
-          user: 'System Admin',
-          timestamp: '2 minutes ago',
-          type: 'success' as const
-        },
-        {
-          id: '2', 
-          action: 'Announcement published',
-          user: user.firstName || 'Admin',
-          timestamp: '15 minutes ago',
-          type: 'info' as const
-        },
-        {
-          id: '3',
-          action: 'System backup completed',
-          user: 'System',
-          timestamp: '1 hour ago', 
-          type: 'success' as const
-        },
-        {
-          id: '4',
-          action: 'User account suspended',
-          user: 'System Admin',
-          timestamp: '2 hours ago',
-          type: 'warning' as const
-        }
-      ];
-      
       setStats({
         totalUsers: data.totalUsers || 0,
         activeUsers: data.activeUsers || 0,
@@ -123,29 +92,20 @@ export default function AdminDashboard() {
         totalPatients: data.totalPatients || 0,
         totalStudents: data.totalStudents || 0,
         totalEvents: data.totalEvents || 0,
-        recentActivities: mockActivities
+        recentActivities: data.recentActivities || []
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Failed to load dashboard statistics');
-      // Fallback with mock data for development
       setStats({
-        totalUsers: 156,
-        activeUsers: 142,
-        pendingUsers: 8,
-        suspendedUsers: 6,
-        totalPatients: 89,
-        totalStudents: 34,
-        totalEvents: 12,
-        recentActivities: [
-          {
-            id: '1',
-            action: 'New user registration',
-            user: 'System',
-            timestamp: '5 minutes ago',
-            type: 'info' as const
-          }
-        ]
+        totalUsers: 0,
+        activeUsers: 0,
+        pendingUsers: 0,
+        suspendedUsers: 0,
+        totalPatients: 0,
+        totalStudents: 0,
+        totalEvents: 0,
+        recentActivities: []
       });
     } finally {
       setLoading(false);
@@ -376,7 +336,7 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">All connections healthy</p>
+                <p className="text-sm text-muted-foreground">{stats.totalUsers > 0 ? 'Connected and active' : 'No data available'}</p>
                 <div className="mt-2 text-xs text-green-600">✓ Operational</div>
               </CardContent>
             </Card>
@@ -397,13 +357,13 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
-                  Storage
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  Active Users
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">85% capacity used</p>
-                <div className="mt-2 text-xs text-yellow-600">⚠ Monitor</div>
+                <p className="text-sm text-muted-foreground">{stats.activeUsers} of {stats.totalUsers} users active</p>
+                <div className="mt-2 text-xs text-green-600">✓ {stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% active</div>
               </CardContent>
             </Card>
           </div>
@@ -444,7 +404,7 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="ghost" className="w-full" onClick={() => navigate('/admin/audit-logs')}>
+              <Button variant="ghost" className="w-full" onClick={() => navigate('/admin/settings/audit-logs')}>
                 View All Activity
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
