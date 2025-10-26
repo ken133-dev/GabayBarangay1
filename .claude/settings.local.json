@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run prisma:generate:*)",
+      "Bash(npm run prisma:migrate:*)",
+      "Bash(npm run prisma:seed-sample:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(export:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWg3M2t3ODIwMDAxdjAyY2NuMW9kNGFlIiwiZW1haWwiOiJ0ZXN0YWRtaW5AdGhleWNhcmUubG9jYWwiLCJyb2xlIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzYxNDQ2MjQ1LCJleHAiOjE3NjIwNTEwNDV9.2Mt6-Ucj9sasTy1dm5m355UsbuAa2rf4vQr7m1ZzMNU\")",
+      "Bash(BHW_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWg3M3Q3cW8wMDA0djAyY2xic3QybjE2IiwiZW1haWwiOiJ0ZXN0X2Jod0BiaW5pdGF5YW4uY29tIiwicm9sZSI6IkJIVyIsImlhdCI6MTc2MTQ0NjYzNCwiZXhwIjoxNzYyMDUxNDM0fQ.z0Uf-Sd31eF-ft3H8UBX9Nc8DcMCuHZ9Uq71W0LdDwo\")",
+      "Bash(BHW_ID=\"cmh73t7qo0004v02clbst2n16\")",
+      "Bash(PATIENT_ID=\"cmh73x01h000av02cmew4h6o8\":*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

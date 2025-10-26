@@ -1,0 +1,204 @@
+import { useState } from 'react';
+import { api } from '@/lib/api';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { Toaster } from '@/components/ui/sonner';
+import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Logo } from '@/components/Logo';
+import { useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '@/components/theme-toggle';
+
+export default function Contact() {
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      // Mock submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({ title: "Success", description: "Your message has been sent!" });
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      <Toaster />
+
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+          <div className="cursor-pointer" onClick={() => navigate('/')}>
+            <Logo size="sm" showText />
+          </div>
+          <nav className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" onClick={() => navigate('/login')}>Login</Button>
+            <Button onClick={() => navigate('/register')}>Register</Button>
+          </nav>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="w-full py-16 md:py-24 bg-muted/30">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-4 text-center max-w-3xl mx-auto">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
+                <Mail className="h-8 w-8 text-primary-foreground" />
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                Contact Us
+              </h1>
+              <p className="text-muted-foreground text-lg md:text-xl">
+                We're here to help. Reach out to us with any questions or concerns.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Form & Info */}
+        <section className="w-full py-16 md:py-24 bg-background">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="grid gap-12 lg:grid-cols-2 max-w-6xl mx-auto">
+              {/* Contact Form */}
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle>Send a Message</CardTitle>
+                  <CardDescription>Our team will get back to you as soon as possible.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input
+                        id="subject"
+                        value={formData.subject}
+                        onChange={e => setFormData({...formData, subject: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message</Label>
+                      <Textarea
+                        id="message"
+                        value={formData.message}
+                        onChange={e => setFormData({...formData, message: e.target.value})}
+                        required
+                        rows={5}
+                      />
+                    </div>
+                    <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
+                      {submitting ? 'Sending...' : 'Send Message'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Contact Information */}
+              <div className="space-y-6">
+                <Card className="hover:shadow-lg transition-shadow duration-300">
+                  <CardHeader>
+                    <CardTitle>Contact Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                        <MapPin className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Address</h3>
+                        <p className="text-sm text-muted-foreground">Barangay Hall, 123 Main St, Metro Manila, Philippines</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                        <Phone className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Phone</h3>
+                        <p className="text-sm text-muted-foreground">+63 (2) 8123-4567</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                        <Mail className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Email</h3>
+                        <p className="text-sm text-muted-foreground">hello@barangay.gov</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                        <Clock className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Office Hours</h3>
+                        <p className="text-sm text-muted-foreground">Mon - Fri: 8am - 5pm</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-lg transition-shadow duration-300">
+                  <CardHeader>
+                    <CardTitle>Find Us</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video rounded-md bg-muted/30 flex items-center justify-center">
+                      <p className="text-sm text-muted-foreground">[Map Placeholder]</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t bg-card">
+        <div className="container mx-auto py-8 px-4 md:px-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">&copy; 2025 TheyCare Portal. All rights reserved.</p>
+            <nav className="flex gap-6">
+              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+            </nav>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

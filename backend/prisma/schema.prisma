@@ -1,0 +1,457 @@
+// This is your Prisma schema file for TheyCare Portal
+// Barangay Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== ENUMS ==========
+
+enum UserRole {
+  SYSTEM_ADMIN
+  BARANGAY_CAPTAIN
+  BARANGAY_OFFICIAL
+  BHW
+  BHW_COORDINATOR
+  DAYCARE_STAFF
+  DAYCARE_TEACHER
+  SK_OFFICER
+  SK_CHAIRMAN
+  PARENT_RESIDENT
+  PATIENT
+  VISITOR
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentType {
+  PRENATAL
+  POSTNATAL
+  IMMUNIZATION
+  GENERAL_CHECKUP
+  FOLLOW_UP
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  SMS
+  EMAIL
+  IN_APP
+}
+
+// ========== USER MANAGEMENT ==========
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  password      String
+  firstName     String
+  lastName      String
+  middleName    String?
+  contactNumber String?
+  address       String?
+  role          UserRole      @default(VISITOR)
+  status        AccountStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  patients              Patient[]
+  daycareRegistrations  DaycareRegistration[]
+  eventRegistrations    EventRegistration[]
+  notifications         Notification[]
+  notificationSettings  NotificationSettings?
+  sentMessages          BroadcastMessage[]
+  healthAppointments    Appointment[]         @relation("HealthWorkerAppointments")
+  auditLogs             AuditLog[]
+
+  @@map("users")
+}
+
+// ========== HEALTH SERVICES MODULE ==========
+
+model Patient {
+  id               String    @id @default(cuid())
+  userId           String?
+  user             User?     @relation(fields: [userId], references: [id])
+  firstName        String
+  lastName         String
+  middleName       String?
+  dateOfBirth      DateTime
+  gender           String
+  bloodType        String?
+  address          String
+  contactNumber    String
+  emergencyContact String
+  guardianName     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  appointments     Appointment[]
+  healthRecords    HealthRecord[]
+  vaccinations     Vaccination[]
+  certificates     Certificate[]
+
+  @@map("patients")
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  patientId       String
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  healthWorkerId  String
+  healthWorker    User              @relation("HealthWorkerAppointments", fields: [healthWorkerId], references: [id])
+  appointmentDate DateTime
+  appointmentType AppointmentType
+  status          AppointmentStatus @default(SCHEDULED)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("appointments")
+}
+
+model HealthRecord {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  recordDate  DateTime
+  diagnosis   String?
+  treatment   String?
+  medications String?
+  vital_signs Json?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("health_records")
+}
+
+model Vaccination {
+  id             String   @id @default(cuid())
+  patientId      String
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  vaccineName    String
+  vaccineType    String
+  dosage         String?
+  dateGiven      DateTime
+  nextDueDate    DateTime?
+  administeredBy String
+  batchNumber    String?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  @@map("vaccinations")
+}
+
+// ========== DAYCARE MANAGEMENT MODULE ==========
+
+model DaycareStudent {
+  id                  String                @id @default(cuid())
+  registrationId      String                @unique
+  registration        DaycareRegistration   @relation(fields: [registrationId], references: [id])
+  firstName           String
+  lastName            String
+  middleName          String?
+  dateOfBirth         DateTime
+  gender              String
+  address             String
+  allergies           String?
+  medicalConditions   String?
+  emergencyContact    String
+  enrollmentDate      DateTime              @default(now())
+  status              String                @default("ACTIVE")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  // Relations
+  attendanceRecords   AttendanceRecord[]
+  progressReports     ProgressReport[]
+  certificates        Certificate[]
+
+  @@map("daycare_students")
+}
+
+model DaycareRegistration {
+  id                String             @id @default(cuid())
+  parentId          String
+  parent            User               @relation(fields: [parentId], references: [id])
+  childFirstName    String
+  childLastName     String
+  childMiddleName   String?
+  childDateOfBirth  DateTime
+  childGender       String
+  address           String
+  parentContact     String
+  emergencyContact  String
+  status            RegistrationStatus @default(PENDING)
+  submittedAt       DateTime           @default(now())
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  notes             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  student           DaycareStudent?
+
+  @@map("daycare_registrations")
+}
+
+model AttendanceRecord {
+  id          String           @id @default(cuid())
+  studentId   String
+  student     DaycareStudent   @relation(fields: [studentId], references: [id])
+  date        DateTime
+  status      AttendanceStatus
+  timeIn      DateTime?
+  timeOut     DateTime?
+  remarks     String?
+  recordedBy  String
+  createdAt   DateTime         @default(now())
+
+  @@map("attendance_records")
+}
+
+model LearningMaterial {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String
+  fileType    String
+  category    String?
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("learning_materials")
+}
+
+model ProgressReport {
+  id                    String         @id @default(cuid())
+  studentId             String
+  student               DaycareStudent @relation(fields: [studentId], references: [id])
+  reportingPeriod       String
+  academicPerformance   String?
+  socialBehavior        String?
+  physicalDevelopment   String?
+  emotionalDevelopment  String?
+  recommendations       String?
+  generatedBy           String
+  generatedAt           DateTime       @default(now())
+  createdAt             DateTime       @default(now())
+
+  @@map("progress_reports")
+}
+
+// ========== SK ENGAGEMENT MODULE ==========
+
+model Event {
+  id                String              @id @default(cuid())
+  title             String
+  description       String
+  eventDate         DateTime
+  startTime         DateTime
+  endTime           DateTime?
+  location          String
+  category          String?
+  maxParticipants   Int?
+  status            EventStatus         @default(DRAFT)
+  createdBy         String
+  publishedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relations
+  registrations     EventRegistration[]
+  attendanceRecords EventAttendance[]
+  certificates      Certificate[]
+
+  @@map("events")
+}
+
+model EventRegistration {
+  id            String             @id @default(cuid())
+  eventId       String
+  event         Event              @relation(fields: [eventId], references: [id])
+  userId        String
+  user          User               @relation(fields: [userId], references: [id])
+  status        RegistrationStatus @default(PENDING)
+  registeredAt  DateTime           @default(now())
+  confirmedAt   DateTime?
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+model EventAttendance {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+  userId      String
+  attendedAt  DateTime @default(now())
+  recordedBy  String
+  remarks     String?
+
+  @@unique([eventId, userId])
+  @@map("event_attendance")
+}
+
+// ========== CERTIFICATE GENERATION ==========
+
+model Certificate {
+  id           String          @id @default(cuid())
+  certificateType String
+  recipientName   String
+  issuedFor       String
+  issuedDate      DateTime     @default(now())
+  issuedBy        String
+  certificateData Json?
+
+  // Polymorphic relations
+  patientId       String?
+  patient         Patient?        @relation(fields: [patientId], references: [id])
+  studentId       String?
+  student         DaycareStudent? @relation(fields: [studentId], references: [id])
+  eventId         String?
+  event           Event?          @relation(fields: [eventId], references: [id])
+
+  createdAt       DateTime     @default(now())
+
+  @@map("certificates")
+}
+
+// ========== NOTIFICATION SYSTEM ==========
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  type        NotificationType
+  title       String
+  message     String
+  isRead      Boolean          @default(false)
+  sentAt      DateTime         @default(now())
+  readAt      DateTime?
+  metadata    Json?
+
+  @@map("notifications")
+}
+
+model NotificationSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  emailEnabled      Boolean  @default(true)
+  smsEnabled        Boolean  @default(false)
+  appointmentReminders Boolean @default(true)
+  eventNotifications   Boolean @default(true)
+  daycareUpdates       Boolean @default(true)
+  systemAnnouncements  Boolean @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("notification_settings")
+}
+
+model BroadcastMessage {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation(fields: [senderId], references: [id])
+  title       String
+  message     String
+  targetRoles String[] // Array of roles to send to
+  sentAt      DateTime @default(now())
+  scheduledFor DateTime?
+
+  @@map("broadcast_messages")
+}
+
+// ========== PUBLIC PORTAL ==========
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  category    String?
+  priority    String   @default("NORMAL")
+  isPublic    Boolean  @default(true)
+  publishedBy String
+  publishedAt DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+// ========== SYSTEM ADMINISTRATION ==========
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entityType  String
+  entityId    String?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model SystemBackup {
+  id          String   @id @default(cuid())
+  backupType  String
+  filePath    String
+  fileSize    Int
+  status      String
+  initiatedBy String
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  notes       String?
+
+  @@map("system_backups")
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TheyCare Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .container { display: flex; flex-direction: column; align-items: center; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TheyCare Portal PWA Icon Generator</h1>
+        <p>Right-click each icon below and "Save image as..." to save with the specified filename.</p>
+
+        <div>
+            <h3>Icon 192x192 (Save as: icon-192x192.png)</h3>
+            <canvas id="icon192" width="192" height="192"></canvas>
+        </div>
+
+        <div>
+            <h3>Icon 512x512 (Save as: icon-512x512.png)</h3>
+            <canvas id="icon512" width="512" height="512"></canvas>
+        </div>
+
+        <button onclick="downloadIcon('icon192', 'icon-192x192.png')">Download 192x192</button>
+        <button onclick="downloadIcon('icon512', 'icon-512x512.png')">Download 512x512</button>
+    </div>
+
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+
+            // Background - Green (TheyCare primary color)
+            ctx.fillStyle = '#136207';
+            ctx.fillRect(0, 0, size, size);
+
+            // Add rounded corners
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Draw "TC" letters in white
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('TC', size / 2, size / 2);
+
+            // Draw subtitle
+            ctx.font = `${size * 0.08}px Arial`;
+            ctx.fillText('TheyCare', size / 2, size * 0.75);
+        }
+
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            link.click();
+        }
+
+        // Generate icons on page load
+        window.onload = () => {
+            drawIcon(document.getElementById('icon192'));
+            drawIcon(document.getElementById('icon512'));
+        };
+    </script>
+</body>
+</html>
