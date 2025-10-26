@@ -58,11 +58,11 @@ interface SystemConfig {
 
 export default function SystemSettings() {
   const [config, setConfig] = useState<SystemConfig>({
-    barangayName: 'Barangay Example',
-    barangayAddress: '123 Main Street, City, Province',
-    barangayContactNumber: '(02) 1234-5678',
-    barangayEmail: 'barangay@example.gov.ph',
-    captainName: 'Hon. Juan Dela Cruz',
+    barangayName: '',
+    barangayAddress: '',
+    barangayContactNumber: '',
+    barangayEmail: '',
+    captainName: '',
     timezone: 'Asia/Manila',
     dateFormat: 'MM/DD/YYYY',
     emailNotifications: true,
@@ -72,8 +72,7 @@ export default function SystemSettings() {
     sessionTimeout: 30,
     maxLoginAttempts: 5,
     passwordExpiryDays: 90,
-    backupFrequency: 'daily',
-    lastBackupDate: '2025-01-20T10:00:00Z'
+    backupFrequency: 'daily'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -96,17 +95,12 @@ export default function SystemSettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with real API call
-      // const response = await api.get('/admin/settings');
-      // setConfig(response.data);
-
-      // Using mock data for now
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
+      const response = await api.get('/admin/settings');
+      setConfig(response.data.settings || config);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast.error('Failed to load system settings');
+    } finally {
       setLoading(false);
     }
   };
@@ -114,12 +108,7 @@ export default function SystemSettings() {
   const handleSaveSettings = async () => {
     try {
       setSaving(true);
-      // TODO: Replace with real API call
-      // await api.put('/admin/settings', config);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      await api.put('/admin/settings', config);
       toast.success('Settings saved successfully', {
         description: 'System configuration has been updated.'
       });
@@ -136,12 +125,9 @@ export default function SystemSettings() {
       toast.info('Backup started', {
         description: 'Creating database backup...'
       });
-
-      // TODO: Replace with real API call
-      // await api.post('/admin/backup');
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
+      
+      const response = await api.post('/admin/backup');
+      
       setConfig({
         ...config,
         lastBackupDate: new Date().toISOString()
@@ -159,11 +145,7 @@ export default function SystemSettings() {
   const handleTestEmail = async () => {
     try {
       toast.info('Sending test email...');
-      // TODO: Replace with real API call
-      // await api.post('/admin/test-email');
-
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      await api.post('/admin/test-email');
       toast.success('Test email sent', {
         description: `Check your inbox at ${config.barangayEmail}`
       });
@@ -176,11 +158,7 @@ export default function SystemSettings() {
   const handleTestSMS = async () => {
     try {
       toast.info('Sending test SMS...');
-      // TODO: Replace with real API call
-      // await api.post('/admin/test-sms');
-
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      await api.post('/admin/test-sms');
       toast.success('Test SMS sent', {
         description: `Check your phone at ${config.barangayContactNumber}`
       });
@@ -621,7 +599,7 @@ export default function SystemSettings() {
                       <Label>Next Scheduled Backup</Label>
                       <p className="text-sm text-muted-foreground">
                         <Clock className="inline h-3 w-3 mr-1" />
-                        Tomorrow at 2:00 AM
+                        Based on {config.backupFrequency} schedule
                       </p>
                     </div>
                   </div>
@@ -654,29 +632,10 @@ export default function SystemSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Database className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">backup_{new Date(Date.now() - i * 86400000).toISOString().split('T')[0]}.sql</div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatDate(new Date(Date.now() - i * 86400000).toISOString())} · 245 MB
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Success
-                        </Badge>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <Database className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-muted-foreground">No backup history available</p>
+                  <p className="text-sm text-muted-foreground mt-1">Backup history will appear here after creating backups</p>
                 </div>
               </CardContent>
             </Card>
@@ -691,42 +650,11 @@ export default function SystemSettings() {
                   Current system status and information
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">System Version</Label>
-                    <p className="font-medium">TheyCare Portal v1.0.0</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Database Status</Label>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
-                        <CheckCircle className="mr-1 h-3 w-3" />
-                        Connected
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Server Uptime</Label>
-                    <p className="font-medium">7 days, 14 hours</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Last Restart</Label>
-                    <p className="font-medium">January 13, 2025 at 10:00 AM</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Total Users</Label>
-                    <p className="font-medium">127 active users</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Database Size</Label>
-                    <p className="font-medium">1.2 GB</p>
-                  </div>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-muted-foreground">System information unavailable</p>
+                  <p className="text-sm text-muted-foreground mt-1">Connect to system monitoring API for detailed metrics</p>
                 </div>
               </CardContent>
             </Card>
@@ -739,24 +667,9 @@ export default function SystemSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {[
-                    { level: 'info', message: 'System backup completed successfully', time: '5 minutes ago' },
-                    { level: 'info', message: 'User login: admin@theycare.local', time: '15 minutes ago' },
-                    { level: 'warning', message: 'High CPU usage detected (85%)', time: '1 hour ago' },
-                    { level: 'info', message: 'Database migration completed', time: '2 hours ago' },
-                    { level: 'error', message: 'Email delivery failed for notification #1234', time: '3 hours ago' }
-                  ].map((log, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
-                      {log.level === 'error' && <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />}
-                      {log.level === 'warning' && <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />}
-                      {log.level === 'info' && <Info className="h-5 w-5 text-blue-600 mt-0.5" />}
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{log.message}</p>
-                        <p className="text-xs text-muted-foreground">{log.time}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">System logs will be displayed here</p>
+                  <p className="text-sm text-muted-foreground mt-1">Connect to audit logs API to view recent activity</p>
                 </div>
               </CardContent>
               <CardFooter>

@@ -197,7 +197,8 @@ async function main() {
         location: 'Barangay Covered Court',
         category: 'SPORTS',
         maxParticipants: 100,
-        status: 'UPCOMING'
+        status: 'PUBLISHED',
+        createdBy: adminUser.id
       }
     }),
     prisma.event.upsert({
@@ -213,7 +214,8 @@ async function main() {
         location: 'Barangay Hall - Conference Room',
         category: 'TRAINING',
         maxParticipants: 50,
-        status: 'UPCOMING'
+        status: 'PUBLISHED',
+        createdBy: adminUser.id
       }
     })
   ]);
@@ -229,12 +231,51 @@ async function main() {
         id: 'sample-event-reg-1',
         eventId: events[0].id,
         userId: residentUser.id,
-        contactInfo: residentUser.contactNumber || '09171234567',
         status: 'APPROVED'
       }
     })
   ]);
   console.log('✅ Created sample event registrations');
+
+  // Create sample daycare registrations first
+  console.log('📝 Creating sample daycare registrations...');
+  const registrations = await Promise.all([
+    prisma.daycareRegistration.upsert({
+      where: { id: 'sample-reg-1' },
+      update: {},
+      create: {
+        id: 'sample-reg-1',
+        parentId: residentUser.id,
+        childFirstName: 'Miguel',
+        childLastName: 'Santos',
+        childMiddleName: 'Cruz',
+        childDateOfBirth: new Date('2020-01-15'),
+        childGender: 'Male',
+        address: 'Purok 1, Main Street',
+        parentContact: '09171234567',
+        emergencyContact: '09187654321',
+        status: 'APPROVED'
+      }
+    }),
+    prisma.daycareRegistration.upsert({
+      where: { id: 'sample-reg-2' },
+      update: {},
+      create: {
+        id: 'sample-reg-2',
+        parentId: residentUser.id,
+        childFirstName: 'Sofia',
+        childLastName: 'Reyes',
+        childMiddleName: 'Garcia',
+        childDateOfBirth: new Date('2021-03-20'),
+        childGender: 'Female',
+        address: 'Purok 2, Second Street',
+        parentContact: '09181234567',
+        emergencyContact: '09191234567',
+        status: 'APPROVED'
+      }
+    })
+  ]);
+  console.log(`✅ Created ${registrations.length} sample daycare registrations`);
 
   // Create sample daycare students
   console.log('👶 Creating sample daycare students...');
@@ -244,17 +285,14 @@ async function main() {
       update: {},
       create: {
         id: 'sample-student-1',
-        childFirstName: 'Miguel',
-        childLastName: 'Santos',
-        childMiddleName: 'Cruz',
-        childDateOfBirth: new Date('2020-01-15'),
-        childGender: 'Male',
-        parentId: residentUser.id,
+        firstName: 'Miguel',
+        lastName: 'Santos',
+        middleName: 'Cruz',
+        dateOfBirth: new Date('2020-01-15'),
+        gender: 'Male',
         address: 'Purok 1, Main Street',
-        parentContact: '09171234567',
         emergencyContact: '09187654321',
-        enrollmentDate: new Date('2024-06-01'),
-        status: 'ACTIVE'
+        registrationId: registrations[0].id
       }
     }),
     prisma.daycareStudent.upsert({
@@ -262,17 +300,14 @@ async function main() {
       update: {},
       create: {
         id: 'sample-student-2',
-        childFirstName: 'Sofia',
-        childLastName: 'Reyes',
-        childMiddleName: 'Garcia',
-        childDateOfBirth: new Date('2021-03-20'),
-        childGender: 'Female',
-        parentId: residentUser.id,
+        firstName: 'Sofia',
+        lastName: 'Reyes',
+        middleName: 'Garcia',
+        dateOfBirth: new Date('2021-03-20'),
+        gender: 'Female',
         address: 'Purok 2, Second Street',
-        parentContact: '09181234567',
         emergencyContact: '09191234567',
-        enrollmentDate: new Date('2024-06-01'),
-        status: 'ACTIVE'
+        registrationId: registrations[1].id
       }
     })
   ]);
@@ -291,7 +326,8 @@ async function main() {
         date: today,
         status: 'PRESENT',
         timeIn: new Date(today.setHours(7, 30, 0, 0)),
-        timeOut: new Date(today.setHours(16, 0, 0, 0))
+        timeOut: new Date(today.setHours(16, 0, 0, 0)),
+        recordedBy: 'Teacher Cruz'
       }
     }),
     prisma.attendanceRecord.upsert({
@@ -303,7 +339,8 @@ async function main() {
         date: today,
         status: 'PRESENT',
         timeIn: new Date(today.setHours(7, 45, 0, 0)),
-        timeOut: new Date(today.setHours(16, 0, 0, 0))
+        timeOut: new Date(today.setHours(16, 0, 0, 0)),
+        recordedBy: 'Teacher Cruz'
       }
     })
   ]);
@@ -324,10 +361,9 @@ async function main() {
         content: 'The Barangay Health Center is offering FREE health check-ups this Saturday, 8AM-12PM. All residents are welcome. Please bring your Barangay ID.',
         category: 'HEALTH',
         priority: 'HIGH',
-        isPublished: true,
         publishedAt: new Date(),
         expiresAt: expiryDate,
-        createdBy: adminUser.firstName + ' ' + adminUser.lastName
+        publishedBy: adminUser.firstName + ' ' + adminUser.lastName
       }
     }),
     prisma.announcement.upsert({
@@ -339,10 +375,9 @@ async function main() {
         content: 'Enrollment for the next school year is now open! Visit the Daycare Center or register online through the portal. Limited slots available.',
         category: 'DAYCARE',
         priority: 'NORMAL',
-        isPublished: true,
         publishedAt: new Date(),
         expiresAt: expiryDate,
-        createdBy: adminUser.firstName + ' ' + adminUser.lastName
+        publishedBy: adminUser.firstName + ' ' + adminUser.lastName
       }
     })
   ]);
@@ -357,12 +392,10 @@ async function main() {
       create: {
         id: 'sample-notif-1',
         userId: residentUser.id,
-        type: 'APPOINTMENT',
+        type: 'IN_APP',
         title: 'Upcoming Appointment',
         message: 'You have an appointment scheduled for tomorrow at 9:00 AM',
-        isRead: false,
-        relatedType: 'APPOINTMENT',
-        relatedId: 'sample-appointment-1'
+        isRead: false
       }
     }),
     prisma.notification.upsert({
@@ -371,12 +404,10 @@ async function main() {
       create: {
         id: 'sample-notif-2',
         userId: residentUser.id,
-        type: 'EVENT',
+        type: 'IN_APP',
         title: 'Event Registration Confirmed',
         message: 'Your registration for Community Basketball Tournament has been approved!',
-        isRead: false,
-        relatedType: 'EVENT',
-        relatedId: events[0].id
+        isRead: false
       }
     })
   ]);

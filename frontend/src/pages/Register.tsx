@@ -103,38 +103,39 @@ export default function Register() {
 
             {/* Benefits */}
             <div className="space-y-3">
-              {[
-                {
-                  icon: Users,
-                  title: "Community Access",
-                  description: "Connect with 1,000+ registered members"
-                },
-                {
-                  icon: Calendar,
-                  title: "24/7 Availability",
-                  description: "Access services anytime, anywhere"
-                },
-                {
-                  icon: Shield,
-                  title: "Secure Platform",
-                  description: "Your data is protected and encrypted"
-                }
-              ].map((benefit, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 flex-shrink-0">
-                    <benefit.icon className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-sm">{benefit.title}</div>
-                    <div className="text-xs text-primary-foreground/80">
-                      {benefit.description}
-                    </div>
+              <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 flex-shrink-0">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-sm">Community Access</div>
+                  <div className="text-xs text-primary-foreground/80">
+                    Connect with your barangay community
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 flex-shrink-0">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-sm">24/7 Availability</div>
+                  <div className="text-xs text-primary-foreground/80">
+                    Access services anytime, anywhere
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 flex-shrink-0">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-sm">Secure Platform</div>
+                  <div className="text-xs text-primary-foreground/80">
+                    Your data is protected and encrypted
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Trust Badge */}

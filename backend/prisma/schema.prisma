@@ -158,7 +158,7 @@ model HealthRecord {
   diagnosis   String?
   treatment   String?
   medications String?
-  vital_signs Json?
+  vitalSigns Json?
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

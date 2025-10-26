@@ -28,8 +28,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect to login if we're on a protected route or have a token
+      const token = localStorage.getItem('token');
+      const currentPath = window.location.pathname;
+      const isPublicRoute = ['/', '/contact', '/services', '/announcements', '/events/public', '/login', '/register', '/forgot-password'].includes(currentPath);
+      
+      if (token || !isPublicRoute) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

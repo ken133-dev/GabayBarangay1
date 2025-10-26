@@ -105,21 +105,6 @@ export default function Login() {
                     Sign up
                   </Link>
                 </div>
-
-                {/* Development Test Accounts */}
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-xs font-semibold mb-2">Test Accounts (password: password123):</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <div>admin@theycare.local</div>
-                    <div>captain@theycare.local</div>
-                    <div>bhw@theycare.local</div>
-                    <div>daycare-staff@theycare.local</div>
-                    <div>sk-officer@theycare.local</div>
-                    <div>resident@theycare.local</div>
-                    <div>patient@theycare.local</div>
-                    <div>official@theycare.local</div>
-                  </div>
-                </div>
               </div>
             </form>
             <div className="relative hidden bg-muted md:block">
@@ -135,38 +120,39 @@ export default function Login() {
                   </div>
 
                   <div className="space-y-4">
-                    {[
-                      {
-                        icon: Heart,
-                        title: "Health Services",
-                        description: "Patient records & appointments"
-                      },
-                      {
-                        icon: Baby,
-                        title: "Daycare Management",
-                        description: "Student tracking & reports"
-                      },
-                      {
-                        icon: Trophy,
-                        title: "SK Programs",
-                        description: "Youth events & engagement"
-                      }
-                    ].map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur"
-                      >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/10">
-                          <feature.icon className="h-4 w-4" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <div className="text-sm font-semibold">{feature.title}</div>
-                          <div className="text-xs text-primary-foreground/70">
-                            {feature.description}
-                          </div>
+                    <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/10">
+                        <Heart className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-semibold">Health Services</div>
+                        <div className="text-xs text-primary-foreground/70">
+                          Patient records & appointments
                         </div>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/10">
+                        <Baby className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-semibold">Daycare Management</div>
+                        <div className="text-xs text-primary-foreground/70">
+                          Student tracking & reports
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-lg bg-primary-foreground/10 p-3 backdrop-blur">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/10">
+                        <Trophy className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-semibold">SK Programs</div>
+                        <div className="text-xs text-primary-foreground/70">
+                          Youth events & engagement
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

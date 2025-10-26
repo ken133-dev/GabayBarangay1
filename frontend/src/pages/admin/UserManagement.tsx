@@ -102,69 +102,15 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with real API call
-      // const response = await api.get('/admin/users');
-      // setUsers(response.data.users);
-
-      // Mock data
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          email: 'admin@theycare.local',
-          firstName: 'System',
-          lastName: 'Administrator',
-          role: 'SYSTEM_ADMIN',
-          status: 'ACTIVE',
-          contactNumber: '09171234567',
-          createdAt: '2025-01-15T08:00:00Z'
-        },
-        {
-          id: '2',
-          email: 'bhw@theycare.local',
-          firstName: 'Maria',
-          lastName: 'Santos',
-          role: 'BHW',
-          status: 'ACTIVE',
-          contactNumber: '09171234568',
-          createdAt: '2025-01-16T09:00:00Z'
-        },
-        {
-          id: '3',
-          email: 'juan.delacruz@gmail.com',
-          firstName: 'Juan',
-          lastName: 'Dela Cruz',
-          role: 'PARENT_RESIDENT',
-          status: 'PENDING',
-          contactNumber: '09171234569',
-          createdAt: '2025-01-20T10:00:00Z'
-        },
-        {
-          id: '4',
-          email: 'daycare-staff@theycare.local',
-          firstName: 'Ana',
-          lastName: 'Reyes',
-          role: 'DAYCARE_STAFF',
-          status: 'ACTIVE',
-          contactNumber: '09171234570',
-          createdAt: '2025-01-17T11:00:00Z'
-        },
-        {
-          id: '5',
-          email: 'suspicious@email.com',
-          firstName: 'Test',
-          lastName: 'User',
-          role: 'VISITOR',
-          status: 'SUSPENDED',
-          contactNumber: '09171234571',
-          createdAt: '2025-01-18T12:00:00Z'
-        }
-      ];
-
-      setUsers(mockUsers);
-      setFilteredUsers(mockUsers);
+      const response = await api.get('/users');
+      const userData = response.data.users || [];
+      setUsers(userData);
+      setFilteredUsers(userData);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
@@ -198,9 +144,7 @@ export default function UserManagement() {
 
   const handleApproveUser = async (userId: string) => {
     try {
-      // TODO: Replace with real API call
-      // await api.patch(`/admin/users/${userId}`, { status: 'ACTIVE' });
-
+      await api.patch(`/users/${userId}/status`, { status: 'ACTIVE' });
       setUsers(users.map(u => u.id === userId ? { ...u, status: 'ACTIVE' as const } : u));
       toast.success('User approved successfully');
     } catch (error) {
@@ -210,9 +154,7 @@ export default function UserManagement() {
 
   const handleSuspendUser = async (userId: string) => {
     try {
-      // TODO: Replace with real API call
-      // await api.patch(`/admin/users/${userId}`, { status: 'SUSPENDED' });
-
+      await api.patch(`/users/${userId}/status`, { status: 'SUSPENDED' });
       setUsers(users.map(u => u.id === userId ? { ...u, status: 'SUSPENDED' as const } : u));
       toast.success('User suspended successfully');
     } catch (error) {
@@ -226,9 +168,8 @@ export default function UserManagement() {
     }
 
     try {
-      // TODO: Replace with real API call
-      // await api.delete(`/admin/users/${userId}`);
-
+      // Note: Delete endpoint may not exist yet
+      await api.delete(`/users/${userId}`);
       setUsers(users.filter(u => u.id !== userId));
       toast.success('User deleted successfully');
     } catch (error) {

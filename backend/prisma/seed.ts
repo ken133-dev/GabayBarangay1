@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from '../src/utils/password';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  const defaultPassword = await bcrypt.hash('password123', 10);
+  const defaultPassword = await hashPassword('password123');
 
   // 1. SYSTEM_ADMIN
   await prisma.user.upsert({

@@ -10,6 +10,8 @@ import daycareRoutes from './routes/daycare.routes';
 import eventRoutes from './routes/event.routes';
 import notificationRoutes from './routes/notification.routes';
 import reportsRoutes from './routes/reports.routes';
+import publicRoutes from './routes/public.routes';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -19,7 +21,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'http://localhost:5174'
+  ],
   credentials: true
 }));
 app.use(morgan('dev'));
@@ -39,6 +44,8 @@ app.use('/api/daycare', daycareRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

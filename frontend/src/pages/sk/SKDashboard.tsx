@@ -2,24 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import type { User } from '@/types/index';
-import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Calendar, UserPlus, Trophy } from 'lucide-react';
+import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Calendar, UserPlus, Trophy, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
-// Mock data for the chart
-const chartData = [
-  { name: 'Jan', participants: 200, events: 2 },
-  { name: 'Feb', participants: 250, events: 3 },
-  { name: 'Mar', participants: 300, events: 4 },
-  { name: 'Apr', participants: 280, events: 3 },
-  { name: 'May', participants: 350, events: 5 },
-  { name: 'Jun', participants: 400, events: 6 },
-];
-
 export default function SKDashboard() {
   const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +28,39 @@ export default function SKDashboard() {
       return;
     }
     setUser(parsedUser);
+    fetchSKStats();
   }, [navigate]);
+
+  const fetchSKStats = async () => {
+    try {
+      const response = await api.get('/reports/sk-engagement');
+      const report = response.data.report;
+      setStats({
+        totalEvents: report?.summary?.totalEvents || 0,
+        upcomingEvents: report?.summary?.publishedEvents || 0,
+        totalParticipants: report?.summary?.totalRegistrations || 0
+      });
+      
+      // Convert monthly trend to chart data
+      const monthlyTrend = report?.events?.monthlyTrend || {};
+      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
+        name: month,
+        events: count,
+        participants: Math.floor((count as number) * 15) // Estimate participants from events
+      }));
+      setChartData(chartData);
+    } catch (error) {
+      console.error('Failed to fetch SK stats:', error);
+      setStats({
+        totalEvents: 0,
+        upcomingEvents: 0,
+        totalParticipants: 0
+      });
+      setChartData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -135,36 +161,44 @@ export default function SKDashboard() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-                <Trophy className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">25</div>
-                <p className="text-xs text-muted-foreground">+5 since last year</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-xs text-muted-foreground">This month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
-                <Users className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,500</div>
-                <p className="text-xs text-muted-foreground">Across all events</p>
-              </CardContent>
-            </Card>
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+                    <Trophy className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalEvents || 0}</div>
+                    <p className="text-xs text-muted-foreground">All time events</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.upcomingEvents || 0}</div>
+                    <p className="text-xs text-muted-foreground">This month</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalParticipants || 0}</div>
+                    <p className="text-xs text-muted-foreground">Across all events</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
@@ -173,17 +207,27 @@ export default function SKDashboard() {
                 <CardDescription>Monthly participants and new events.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="participants" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                    <Area type="monotone" dataKey="events" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area type="monotone" dataKey="participants" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                      <Area type="monotone" dataKey="events" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    No chart data available
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card className="col-span-3">

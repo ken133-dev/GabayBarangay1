@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { api } from '@/lib/api';
 import {
   Heart,
   Baby,
@@ -26,61 +28,89 @@ import {
 
 export default function Homepage() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    communityMembers: 0,
+    healthRecords: 0,
+    daycareChildren: 0,
+    skEvents: 0
+  });
+  const [features, setFeatures] = useState<any[]>([]);
+  const [benefits, setBenefits] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [serviceFeatures, setServiceFeatures] = useState<any[]>([]);
+  const [contactInfo, setContactInfo] = useState({
+    email: '',
+    phone: '',
+    address: ''
+  });
+  const [loading, setLoading] = useState(true);
 
-  const features = [
-    {
-      icon: Heart,
-      title: "Maternal Health Services",
-      description: "Digital tracking of prenatal check-ups, immunization schedules, and health records for mothers and newborns in Barangay Binitayan.",
-      stats: "Streamlined Health Monitoring"
-    },
-    {
-      icon: Baby,
-      title: "Daycare Education Management",
-      description: "Online registration, attendance tracking, progress reporting, and learning material distribution for daycare programs.",
-      stats: "Enhanced Child Development"
-    },
-    {
-      icon: Users,
-      title: "SK Youth Engagement",
-      description: "Event planning, attendance tracking, and community participation analytics for Sangguniang Kabataan programs.",
-      stats: "Active Youth Participation"
-    }
-  ];
+  useEffect(() => {
+    const fetchPublicData = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching public data...');
+        
+        // Fetch public data (no auth required)
+        const [statsRes, featuresRes, benefitsRes, testimonialsRes, serviceFeaturesRes] = await Promise.all([
+          api.get('/public/stats').catch(err => {
+            console.error('Stats fetch error:', err);
+            return { data: { stats: { communityMembers: 0, healthRecords: 0, daycareChildren: 0, skEvents: 0 } } };
+          }),
+          api.get('/public/features').catch(err => {
+            console.error('Features fetch error:', err);
+            return { data: { features: [] } };
+          }),
+          api.get('/public/benefits').catch(err => {
+            console.error('Benefits fetch error:', err);
+            return { data: { benefits: [] } };
+          }),
+          api.get('/public/testimonials').catch(err => {
+            console.error('Testimonials fetch error:', err);
+            return { data: { testimonials: [] } };
+          }),
+          api.get('/public/service-features').catch(err => {
+            console.error('Service features fetch error:', err);
+            return { data: { features: [] } };
+          })
+        ]);
 
-  const benefits = [
-    { icon: Shield, text: "Secure & Role-Based Access" },
-    { icon: FileText, text: "Digital Documentation" },
-    { icon: CalendarDays, text: "Automated Scheduling" },
-    { icon: BarChart3, text: "Real-time Analytics" }
-  ];
+        console.log('Public data fetched:', { statsRes, featuresRes, benefitsRes, testimonialsRes, serviceFeaturesRes });
 
-  const testimonials = [
-    {
-      name: "Hon. Michael L. Rodridueza",
-      role: "Barangay Captain, Binitayan",
-      content: "TheyCare Portal has transformed our community services. We can now efficiently manage health, daycare, and youth programs in one platform.",
-      rating: 5
-    },
-    {
-      name: "Gianfranco A. Tirador",
-      role: "SK Chairman, Binitayan",
-      content: "Event management and youth engagement have never been more organized. The portal helps us reach more community members effectively.",
-      rating: 5
-    },
-    {
-      name: "Barangay Health Worker",
-      role: "BHW Team, Binitayan",
-      content: "Digital health records and automated appointment scheduling have significantly improved our maternal care services.",
-      rating: 5
-    }
-  ];
+        setStats(statsRes.data.stats || {
+          communityMembers: 0,
+          healthRecords: 0,
+          daycareChildren: 0,
+          skEvents: 0
+        });
 
-  const stats = [
-    { value: "8,044+", label: "Community Members", icon: Users },
-    { value: "500+", label: "Health Records Managed", icon: Heart },
-    { value: "150+", label: "Daycare Children", icon: Baby },
-    { value: "50+", label: "SK Events Organized", icon: Calendar }
+        setFeatures(featuresRes.data.features || []);
+        setBenefits(benefitsRes.data.benefits || []);
+        setTestimonials(testimonialsRes.data.testimonials || []);
+        setServiceFeatures(serviceFeaturesRes.data.features || []);
+
+        // Set default contact info (no need to fetch from admin settings)
+        setContactInfo({
+          email: 'contact@barangaybinitayan.gov.ph',
+          phone: '+63 XXX XXX XXXX',
+          address: 'Barangay Binitayan, Daraga, Albay, Philippines'
+        });
+      } catch (error) {
+        console.error('Failed to fetch public data:', error);
+        // Keep default values on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublicData();
+  }, []);
+
+  const statsDisplay = [
+    { value: `${stats.communityMembers}+`, label: "Community Members", icon: Users },
+    { value: `${stats.healthRecords}+`, label: "Health Records Managed", icon: Heart },
+    { value: `${stats.daycareChildren}+`, label: "Daycare Children", icon: Baby },
+    { value: `${stats.skEvents}+`, label: "SK Events Organized", icon: Calendar }
   ];
 
   return (
@@ -183,7 +213,11 @@ export default function Homepage() {
                   {benefits.map((benefit, idx) => (
                     <div key={idx} className="flex flex-col items-center gap-2 p-3 rounded-lg bg-card border hover:shadow-md transition-shadow duration-300">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <benefit.icon className="h-5 w-5 text-primary" />
+                        {benefit.iconType === 'shield' ? <Shield className="h-5 w-5 text-primary" /> :
+                         benefit.iconType === 'fileText' ? <FileText className="h-5 w-5 text-primary" /> :
+                         benefit.iconType === 'calendar' ? <CalendarDays className="h-5 w-5 text-primary" /> :
+                         benefit.iconType === 'barChart' ? <BarChart3 className="h-5 w-5 text-primary" /> :
+                         <Shield className="h-5 w-5 text-primary" />}
                       </div>
                       <span className="text-xs font-medium text-center">{benefit.text}</span>
                     </div>
@@ -261,10 +295,14 @@ export default function Homepage() {
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-start justify-between">
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-md">
-                          {feature.icon === Users ? (
+                          {feature.iconType === 'users' || feature.title?.includes('SK') ? (
                             <img src="/sklogo.png" alt="SK Logo" className="h-8 w-8 object-contain" />
+                          ) : feature.iconType === 'heart' || feature.title?.includes('Health') ? (
+                            <Heart className="h-6 w-6 text-primary-foreground" />
+                          ) : feature.iconType === 'baby' || feature.title?.includes('Daycare') ? (
+                            <Baby className="h-6 w-6 text-primary-foreground" />
                           ) : (
-                            <feature.icon className="h-6 w-6 text-primary-foreground" />
+                            <Heart className="h-6 w-6 text-primary-foreground" />
                           )}
                         </div>
                         <Badge variant="secondary" className="text-xs">
@@ -293,19 +331,25 @@ export default function Homepage() {
         {/* Stats Section */}
         <section className="w-full py-16 md:py-24 bg-primary text-primary-foreground">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="text-center space-y-3">
-                  <div className="flex justify-center">
-                    <div className="h-14 w-14 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
-                      <stat.icon className="h-7 w-7" />
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-foreground"></div>
+              </div>
+            ) : (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
+                {statsDisplay.map((stat, idx) => (
+                  <div key={idx} className="text-center space-y-3">
+                    <div className="flex justify-center">
+                      <div className="h-14 w-14 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
+                        <stat.icon className="h-7 w-7" />
+                      </div>
                     </div>
+                    <div className="text-4xl font-bold">{stat.value}</div>
+                    <div className="text-sm opacity-90">{stat.label}</div>
                   </div>
-                  <div className="text-4xl font-bold">{stat.value}</div>
-                  <div className="text-sm opacity-90">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -360,14 +404,7 @@ export default function Homepage() {
                 </p>
 
                 <div className="space-y-3">
-                  {[
-                    "Secure role-based access for BHWs, daycare staff, and SK officials",
-                    "Real-time notifications and announcements",
-                    "Digital certificates and printable documents",
-                    "Comprehensive reporting and analytics",
-                    "Mobile-responsive Progressive Web App",
-                    "Backup and recovery features for data safety"
-                  ].map((item, idx) => (
+                  {serviceFeatures.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -401,8 +438,8 @@ export default function Homepage() {
                       </div>
                       <div>
                         <div className="font-medium">Email</div>
-                        <a href="mailto:barangay.binitayan@daraga.gov.ph" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                          barangay.binitayan@daraga.gov.ph
+                        <a href={`mailto:${contactInfo.email}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                          {contactInfo.email}
                         </a>
                       </div>
                     </div>
@@ -413,8 +450,8 @@ export default function Homepage() {
                       </div>
                       <div>
                         <div className="font-medium">Contact Number</div>
-                        <a href="tel:+639123456789" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                          +63 912 345 6789
+                        <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                          {contactInfo.phone}
                         </a>
                       </div>
                     </div>
@@ -426,8 +463,7 @@ export default function Homepage() {
                       <div>
                         <div className="font-medium">Barangay Hall</div>
                         <p className="text-sm text-muted-foreground">
-                          Barangay Binitayan<br />
-                          Daraga, Albay, Philippines
+                          {contactInfo.address}
                         </p>
                       </div>
                     </div>

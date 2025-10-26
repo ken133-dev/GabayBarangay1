@@ -142,13 +142,13 @@ export default function ProgressReports() {
   };
 
   const calculateAverageScore = (report: ProgressReport) => {
-    const scores = [
-      report.cognitiveSkills,
-      report.motorSkills,
-      report.socialSkills,
-      report.languageSkills,
-      report.emotionalDevelopment
-    ].filter(s => s !== null && s !== undefined) as number[];
+    const scores = Object.values({
+      cognitive: report.cognitiveSkills,
+      motor: report.motorSkills,
+      social: report.socialSkills,
+      language: report.languageSkills,
+      emotional: report.emotionalDevelopment
+    }).filter(s => s !== null && s !== undefined) as number[];
 
     if (scores.length === 0) return null;
     return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);

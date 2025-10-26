@@ -2,24 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import type { User } from '@/types/index';
-import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Baby, UserPlus, Calendar, BookOpen } from 'lucide-react';
+import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Baby, UserPlus, Calendar, BookOpen, Loader2 } from 'lucide-react';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
-// Mock data for the chart
-const chartData = [
-  { name: 'Jan', students: 25, registrations: 10 },
-  { name: 'Feb', students: 28, registrations: 5 },
-  { name: 'Mar', students: 32, registrations: 8 },
-  { name: 'Apr', students: 30, registrations: 3 },
-  { name: 'May', students: 35, registrations: 7 },
-  { name: 'Jun', students: 40, registrations: 12 },
-];
-
 export default function DaycareDashboard() {
   const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +28,39 @@ export default function DaycareDashboard() {
       return;
     }
     setUser(parsedUser);
+    fetchDaycareStats();
   }, [navigate]);
+
+  const fetchDaycareStats = async () => {
+    try {
+      const response = await api.get('/reports/daycare');
+      const report = response.data.report;
+      setStats({
+        totalStudents: report?.summary?.totalStudents || 0,
+        pendingRegistrations: report?.summary?.pendingRegistrations || 0,
+        todayAttendance: report?.summary?.attendanceRate || '0%'
+      });
+      
+      // Convert monthly trend to chart data
+      const monthlyTrend = report?.registrations?.monthlyTrend || {};
+      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
+        name: month,
+        registrations: count,
+        students: Math.floor((count as number) * 0.9) // Estimate students from registrations
+      }));
+      setChartData(chartData);
+    } catch (error) {
+      console.error('Failed to fetch daycare stats:', error);
+      setStats({
+        totalStudents: 0,
+        pendingRegistrations: 0,
+        todayAttendance: '0%'
+      });
+      setChartData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -135,36 +161,44 @@ export default function DaycareDashboard() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                <Users className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">42</div>
-                <p className="text-xs text-muted-foreground">+5 since last month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Pending Registrations</CardTitle>
-                <UserPlus className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-xs text-muted-foreground">Awaiting approval</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Today's Attendance</CardTitle>
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">95%</div>
-                <p className="text-xs text-muted-foreground">-2% from yesterday</p>
-              </CardContent>
-            </Card>
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalStudents || 0}</div>
+                    <p className="text-xs text-muted-foreground">Enrolled students</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Pending Registrations</CardTitle>
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.pendingRegistrations || 0}</div>
+                    <p className="text-xs text-muted-foreground">Awaiting approval</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Attendance</CardTitle>
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.todayAttendance || 0}%</div>
+                    <p className="text-xs text-muted-foreground">Present today</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
@@ -173,17 +207,27 @@ export default function DaycareDashboard() {
                 <CardDescription>Monthly student enrollment and new registrations.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsBarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="students" fill="#8884d8" />
-                    <Bar dataKey="registrations" fill="#82ca9d" />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RechartsBarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="students" fill="#8884d8" />
+                      <Bar dataKey="registrations" fill="#82ca9d" />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    No chart data available
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card className="col-span-3">

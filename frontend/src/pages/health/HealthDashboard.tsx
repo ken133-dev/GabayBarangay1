@@ -2,24 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import type { User } from '@/types/index';
-import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Heart, Activity, UserPlus } from 'lucide-react';
+import { Bell, Home, Users, BarChart, LogOut, Sparkles, Search, Heart, Activity, UserPlus, Loader2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
-// Mock data for the chart
-const chartData = [
-  { name: 'Jan', patients: 120, appointments: 80 },
-  { name: 'Feb', patients: 130, appointments: 85 },
-  { name: 'Mar', patients: 150, appointments: 95 },
-  { name: 'Apr', patients: 140, appointments: 100 },
-  { name: 'May', patients: 160, appointments: 110 },
-  { name: 'Jun', patients: 170, appointments: 120 },
-];
-
 export default function HealthDashboard() {
   const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +28,39 @@ export default function HealthDashboard() {
       return;
     }
     setUser(parsedUser);
+    fetchHealthStats();
   }, [navigate]);
+
+  const fetchHealthStats = async () => {
+    try {
+      const response = await api.get('/reports/health');
+      const report = response.data.report;
+      setStats({
+        todayAppointments: report?.summary?.totalAppointments || 0,
+        totalPatients: report?.summary?.totalPatients || 0,
+        pendingFollowups: report?.summary?.pendingAppointments || 0
+      });
+      
+      // Convert monthly trend to chart data
+      const monthlyTrend = report?.appointments?.monthlyTrend || {};
+      const chartData = Object.entries(monthlyTrend).map(([month, count]) => ({
+        name: month,
+        appointments: count,
+        patients: Math.floor((count as number) * 0.8) // Estimate patients from appointments
+      }));
+      setChartData(chartData);
+    } catch (error) {
+      console.error('Failed to fetch health stats:', error);
+      setStats({
+        todayAppointments: 0,
+        totalPatients: 0,
+        pendingFollowups: 0
+      });
+      setChartData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -135,36 +161,44 @@ export default function HealthDashboard() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
-                <Activity className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">5</div>
-                <p className="text-xs text-muted-foreground">+2 since yesterday</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                <Users className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,254</div>
-                <p className="text-xs text-muted-foreground">+50 this month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Pending Follow-ups</CardTitle>
-                <Heart className="w-4 h-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">Needs attention</p>
-              </CardContent>
-            </Card>
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+                    <Activity className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.todayAppointments || 0}</div>
+                    <p className="text-xs text-muted-foreground">Scheduled for today</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalPatients || 0}</div>
+                    <p className="text-xs text-muted-foreground">Registered patients</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Pending Follow-ups</CardTitle>
+                    <Heart className="w-4 h-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.pendingFollowups || 0}</div>
+                    <p className="text-xs text-muted-foreground">Needs attention</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
@@ -173,17 +207,27 @@ export default function HealthDashboard() {
                 <CardDescription>Monthly patient visits and appointments.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="patients" stroke="#8884d8" activeDot={{ r: 8 }} />
-                    <Line type="monotone" dataKey="appointments" stroke="#82ca9d" />
-                  </LineChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="patients" stroke="#8884d8" activeDot={{ r: 8 }} />
+                      <Line type="monotone" dataKey="appointments" stroke="#82ca9d" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    No chart data available
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card className="col-span-3">

@@ -87,71 +87,10 @@ export default function PendingApprovals() {
   const fetchPendingUsers = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with real API call
-      // const response = await api.get('/admin/users/pending');
-      // setUsers(response.data);
-
-      // Mock data for now
-      const mockPendingUsers: PendingUser[] = [
-        {
-          id: '1',
-          email: 'juan.delacruz@email.com',
-          firstName: 'Juan',
-          lastName: 'Dela Cruz',
-          role: 'PARENT_RESIDENT',
-          contactNumber: '09171234567',
-          address: 'Block 5, Lot 10, Barangay Example',
-          createdAt: '2025-01-15T08:30:00Z',
-          status: 'PENDING'
-        },
-        {
-          id: '2',
-          email: 'maria.santos@email.com',
-          firstName: 'Maria',
-          lastName: 'Santos',
-          role: 'PATIENT',
-          contactNumber: '09182345678',
-          address: 'Block 3, Lot 5, Barangay Example',
-          createdAt: '2025-01-14T14:20:00Z',
-          status: 'PENDING'
-        },
-        {
-          id: '3',
-          email: 'pedro.reyes@email.com',
-          firstName: 'Pedro',
-          lastName: 'Reyes',
-          role: 'PARENT_RESIDENT',
-          contactNumber: '09193456789',
-          address: 'Block 7, Lot 15, Barangay Example',
-          createdAt: '2025-01-13T10:15:00Z',
-          status: 'PENDING'
-        },
-        {
-          id: '4',
-          email: 'ana.garcia@email.com',
-          firstName: 'Ana',
-          lastName: 'Garcia',
-          role: 'PATIENT',
-          contactNumber: '09204567890',
-          address: 'Block 2, Lot 8, Barangay Example',
-          createdAt: '2025-01-12T16:45:00Z',
-          status: 'PENDING'
-        },
-        {
-          id: '5',
-          email: 'jose.rodriguez@email.com',
-          firstName: 'Jose',
-          lastName: 'Rodriguez',
-          role: 'PARENT_RESIDENT',
-          contactNumber: '09215678901',
-          address: 'Block 4, Lot 12, Barangay Example',
-          createdAt: '2025-01-11T09:30:00Z',
-          status: 'PENDING'
-        }
-      ];
-
-      setUsers(mockPendingUsers);
-      setFilteredUsers(mockPendingUsers);
+      const response = await api.get('/users?status=PENDING');
+      const pendingUsers = response.data.users || [];
+      setUsers(pendingUsers);
+      setFilteredUsers(pendingUsers);
     } catch (error) {
       console.error('Error fetching pending users:', error);
       toast.error('Failed to load pending users');
@@ -206,15 +145,14 @@ export default function PendingApprovals() {
     try {
       setActionLoading(true);
 
-      // TODO: Replace with real API call
       if (actionType === 'approve') {
-        // await api.post(`/admin/users/${selectedUser.id}/approve`);
+        await api.patch(`/users/${selectedUser.id}/status`, { status: 'ACTIVE' });
         setUsers(users.filter(u => u.id !== selectedUser.id));
         toast.success('User approved successfully', {
           description: `${selectedUser.firstName} ${selectedUser.lastName} has been activated.`
         });
       } else {
-        // await api.post(`/admin/users/${selectedUser.id}/reject`, { reason: rejectionReason });
+        await api.patch(`/users/${selectedUser.id}/status`, { status: 'REJECTED', reason: rejectionReason });
         setUsers(users.filter(u => u.id !== selectedUser.id));
         toast.success('User rejected', {
           description: 'The user has been notified of the rejection.'

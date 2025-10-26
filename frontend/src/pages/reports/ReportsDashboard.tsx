@@ -135,21 +135,21 @@ export default function ReportsDashboard() {
     );
   }
 
-  // Prepare chart data
-  const appointmentStatusData = stats.healthServices ? [
-    { name: 'Scheduled', value: stats.healthServices.scheduledAppointments },
-    { name: 'Completed', value: stats.healthServices.completedAppointments }
-  ] : [];
+  // Prepare chart data dynamically from API response
+  const appointmentStatusData = stats.healthServices ? Object.entries({
+    'Scheduled': stats.healthServices.scheduledAppointments,
+    'Completed': stats.healthServices.completedAppointments
+  }).map(([name, value]) => ({ name, value })) : [];
 
-  const registrationStatusData = stats.daycareServices ? [
-    { name: 'Approved', value: stats.daycareServices.approvedRegistrations },
-    { name: 'Pending', value: stats.daycareServices.pendingRegistrations }
-  ] : [];
+  const registrationStatusData = stats.daycareServices ? Object.entries({
+    'Approved': stats.daycareServices.approvedRegistrations,
+    'Pending': stats.daycareServices.pendingRegistrations
+  }).map(([name, value]) => ({ name, value })) : [];
 
-  const eventStatusData = stats.skEngagement ? [
-    { name: 'Published', value: stats.skEngagement.publishedEvents },
-    { name: 'Completed', value: stats.skEngagement.completedEvents }
-  ] : [];
+  const eventStatusData = stats.skEngagement ? Object.entries({
+    'Published': stats.skEngagement.publishedEvents,
+    'Completed': stats.skEngagement.completedEvents
+  }).map(([name, value]) => ({ name, value })) : [];
 
   return (
     <DashboardLayout currentPage="/reports">

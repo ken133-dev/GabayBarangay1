@@ -275,7 +275,7 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
 
 export const createHealthRecord = async (req: AuthRequest, res: Response) => {
   try {
-    const { patientId, recordDate, diagnosis, treatment, medications, vital_signs, notes } = req.body;
+    const { patientId, recordDate, diagnosis, treatment, medications, vitalSigns, notes } = req.body;
 
     const healthRecord = await prisma.healthRecord.create({
       data: {
@@ -284,7 +284,7 @@ export const createHealthRecord = async (req: AuthRequest, res: Response) => {
         diagnosis,
         treatment,
         medications,
-        vital_signs,
+        vitalSigns,
         notes
       },
       include: {

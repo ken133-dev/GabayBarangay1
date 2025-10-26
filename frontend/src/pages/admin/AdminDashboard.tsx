@@ -80,60 +80,33 @@ export default function AdminDashboard() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with real API call
-      // const response = await api.get('/admin/stats');
-      // setStats(response.data);
-
-      // Mock data for now
+      // Use reports endpoint since /admin/stats doesn't exist yet
+      const response = await api.get('/reports/dashboard-stats');
+      const data = response.data;
       setStats({
-        totalUsers: 127,
-        activeUsers: 98,
-        pendingUsers: 15,
-        suspendedUsers: 14,
-        totalPatients: 342,
-        totalStudents: 89,
-        totalEvents: 23,
-        recentActivities: [
-          {
-            id: '1',
-            action: 'New user registration',
-            user: 'Juan Dela Cruz',
-            timestamp: '5 minutes ago',
-            type: 'info'
-          },
-          {
-            id: '2',
-            action: 'User account approved',
-            user: 'Maria Santos',
-            timestamp: '15 minutes ago',
-            type: 'success'
-          },
-          {
-            id: '3',
-            action: 'Health appointment scheduled',
-            user: 'BHW Maria',
-            timestamp: '1 hour ago',
-            type: 'info'
-          },
-          {
-            id: '4',
-            action: 'Daycare registration pending',
-            user: 'Parent John',
-            timestamp: '2 hours ago',
-            type: 'warning'
-          },
-          {
-            id: '5',
-            action: 'SK Event published',
-            user: 'SK Officer Mark',
-            timestamp: '3 hours ago',
-            type: 'success'
-          }
-        ]
+        totalUsers: data.summary?.totalUsers || 0,
+        activeUsers: data.summary?.totalUsers || 0,
+        pendingUsers: 0,
+        suspendedUsers: 0,
+        totalPatients: data.summary?.totalPatients || 0,
+        totalStudents: data.summary?.totalStudents || 0,
+        totalEvents: data.summary?.totalEvents || 0,
+        recentActivities: []
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Failed to load dashboard statistics');
+      // Fallback to empty stats
+      setStats({
+        totalUsers: 0,
+        activeUsers: 0,
+        pendingUsers: 0,
+        suspendedUsers: 0,
+        totalPatients: 0,
+        totalStudents: 0,
+        totalEvents: 0,
+        recentActivities: []
+      });
     } finally {
       setLoading(false);
     }
@@ -145,8 +118,6 @@ export default function AdminDashboard() {
       value: stats.totalUsers,
       icon: Users,
       description: 'All registered users',
-      trend: '+12%',
-      trendUp: true,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       onClick: () => navigate('/admin/users')
@@ -156,8 +127,6 @@ export default function AdminDashboard() {
       value: stats.activeUsers,
       icon: UserCheck,
       description: 'Users with active accounts',
-      trend: '+8%',
-      trendUp: true,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       onClick: () => navigate('/admin/users')
@@ -167,8 +136,6 @@ export default function AdminDashboard() {
       value: stats.pendingUsers,
       icon: Clock,
       description: 'Awaiting approval',
-      trend: stats.pendingUsers > 0 ? 'Action needed' : 'All clear',
-      trendUp: false,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
       onClick: () => navigate('/admin/users/pending')
@@ -178,8 +145,6 @@ export default function AdminDashboard() {
       value: stats.suspendedUsers,
       icon: UserX,
       description: 'Suspended accounts',
-      trend: '-3%',
-      trendUp: true,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
       onClick: () => navigate('/admin/users')
@@ -189,8 +154,6 @@ export default function AdminDashboard() {
       value: stats.totalPatients,
       icon: Heart,
       description: 'Registered patients',
-      trend: '+24',
-      trendUp: true,
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
       onClick: () => navigate('/health/patients')
@@ -200,8 +163,6 @@ export default function AdminDashboard() {
       value: stats.totalStudents,
       icon: Baby,
       description: 'Enrolled students',
-      trend: '+5',
-      trendUp: true,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       onClick: () => navigate('/daycare/registrations')
@@ -211,22 +172,9 @@ export default function AdminDashboard() {
       value: stats.totalEvents,
       icon: Calendar,
       description: 'Published events',
-      trend: '+2',
-      trendUp: true,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       onClick: () => navigate('/sk/events')
-    },
-    {
-      title: 'System Health',
-      value: '98%',
-      icon: Activity,
-      description: 'Overall performance',
-      trend: 'Excellent',
-      trendUp: true,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      onClick: () => navigate('/admin/settings')
     }
   ];
 
@@ -337,16 +285,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {stat.description}
                   </p>
-                  <div className="flex items-center mt-2">
-                    {stat.trendUp ? (
-                      <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-red-600 mr-1" />
-                    )}
-                    <span className={`text-xs ${stat.trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.trend}
-                    </span>
-                  </div>
+
                 </CardContent>
               </Card>
             );
@@ -445,7 +384,7 @@ export default function AdminDashboard() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Active Modules</span>
-                  <span className="font-medium">3/3</span>
+                  <span className="font-medium">All Active</span>
                 </div>
                 <div className="flex gap-2">
                   <Badge variant="outline" className="flex-1 justify-center">
