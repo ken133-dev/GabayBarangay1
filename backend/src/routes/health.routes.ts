@@ -19,7 +19,10 @@ import {
   // Vaccination Management
   createVaccination,
   getVaccinations,
-  getUpcomingVaccinations
+  getUpcomingVaccinations,
+  // Certificate Management
+  createCertificate,
+  getCertificates
 } from '../controllers/health.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -48,5 +51,9 @@ router.get('/records/my', authenticate, authorize('PATIENT'), getMyHealthRecords
 router.post('/vaccinations', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createVaccination);
 router.get('/vaccinations', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getVaccinations);
 router.get('/vaccinations/upcoming', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getUpcomingVaccinations);
+
+// ========== CERTIFICATE ROUTES ==========
+router.post('/certificates', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createCertificate);
+router.get('/certificates', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getCertificates);
 
 export default router;

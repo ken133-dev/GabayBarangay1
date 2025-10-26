@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +42,7 @@ export default function ProgressReports() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('');
-  const [filterStudent, setFilterStudent] = useState('');
+  const [filterStudent, setFilterStudent] = useState('all');
   const [formData, setFormData] = useState({
     reportPeriod: '',
     cognitiveSkills: '',
@@ -154,17 +155,17 @@ export default function ProgressReports() {
     return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
   };
 
-  const filteredReports = filterStudent
+  const filteredReports = filterStudent && filterStudent !== 'all'
     ? reports.filter(r => r.studentId === filterStudent)
     : reports;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+    <DashboardLayout currentPage="/daycare/progress-reports">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Progress Reports</h1>
-            <p className="text-gray-600 mt-1">Student development tracking and assessments</p>
+            <p className="text-muted-foreground">Student development tracking and assessments</p>
           </div>
           <Button onClick={() => setShowDialog(true)}>
             Create Report
@@ -218,7 +219,7 @@ export default function ProgressReports() {
                     <SelectValue placeholder="All students" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All students</SelectItem>
+                    <SelectItem value="all">All students</SelectItem>
                     {students.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
                         {student.firstName} {student.lastName}
@@ -471,6 +472,6 @@ export default function ProgressReports() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

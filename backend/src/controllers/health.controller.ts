@@ -275,16 +275,16 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
 
 export const createHealthRecord = async (req: AuthRequest, res: Response) => {
   try {
-    const { patientId, recordDate, diagnosis, treatment, medications, vitalSigns, notes } = req.body;
+    const { patientId, diagnosis, treatment, medications, vital_signs, notes } = req.body;
 
     const healthRecord = await prisma.healthRecord.create({
       data: {
         patientId,
-        recordDate: new Date(recordDate),
+        recordDate: new Date(),
         diagnosis,
         treatment,
         medications,
-        vitalSigns,
+        vitalSigns: vital_signs,
         notes
       },
       include: {
@@ -426,5 +426,94 @@ export const getUpcomingVaccinations = async (req: AuthRequest, res: Response) =
   } catch (error) {
     console.error('Get upcoming vaccinations error:', error);
     res.status(500).json({ error: 'Failed to fetch upcoming vaccinations' });
+  }
+};
+
+// ========== CERTIFICATE MANAGEMENT ==========
+
+export const createCertificate = async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      patientId,
+      certificateType,
+      certificateNumber,
+      purpose,
+      findings,
+      recommendations,
+      expiryDate,
+      issuedBy
+    } = req.body;
+
+    // Get patient info for recipient name
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId }
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    const certificate = await prisma.certificate.create({
+      data: {
+        patientId,
+        certificateType,
+        recipientName: `${patient.firstName} ${patient.lastName}`,
+        issuedFor: purpose || certificateType,
+        issuedBy,
+        certificateData: {
+          certificateNumber,
+          purpose,
+          findings,
+          recommendations,
+          expiryDate: expiryDate ? new Date(expiryDate) : null
+        }
+      },
+      include: {
+        patient: true
+      }
+    });
+
+    res.status(201).json({ message: 'Certificate generated successfully', certificate });
+  } catch (error) {
+    console.error('Create certificate error:', error);
+    res.status(500).json({ error: 'Failed to generate certificate' });
+  }
+};
+
+export const getCertificates = async (req: AuthRequest, res: Response) => {
+  try {
+    const { patientId } = req.query;
+
+    const where = patientId ? { patientId: patientId as string } : { patientId: { not: null } };
+
+    const certificates = await prisma.certificate.findMany({
+      where,
+      include: {
+        patient: true
+      },
+      orderBy: { issuedDate: 'desc' }
+    });
+
+    // Transform certificates to match frontend expectations
+    const transformedCertificates = certificates.map(cert => {
+      const data = cert.certificateData as any;
+      return {
+        id: cert.id,
+        certificateType: cert.certificateType,
+        issuedDate: cert.issuedDate,
+        issuedBy: cert.issuedBy,
+        patient: cert.patient,
+        certificateNumber: data?.certificateNumber || 'N/A',
+        purpose: data?.purpose || cert.issuedFor,
+        findings: data?.findings,
+        recommendations: data?.recommendations,
+        expiryDate: data?.expiryDate
+      };
+    });
+
+    res.json({ certificates: transformedCertificates });
+  } catch (error) {
+    console.error('Get certificates error:', error);
+    res.status(500).json({ error: 'Failed to fetch certificates' });
   }
 };

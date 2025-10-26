@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { DaycareRegistration } from '@/types/index';
@@ -24,9 +25,9 @@ export default function StudentRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Daycare Registrations</h1>
+    <DashboardLayout currentPage="/daycare/registrations">
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Daycare Registrations</h1>
 
         <Card>
           <CardHeader>
@@ -72,6 +73,6 @@ export default function StudentRegistration() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

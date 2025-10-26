@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,7 @@ export default function LearningMaterials() {
   const [materials, setMaterials] = useState<LearningMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -175,13 +176,13 @@ export default function LearningMaterials() {
     return <Badge variant="outline">File</Badge>;
   };
 
-  const filteredMaterials = filterCategory
-    ? materials.filter(m => m.category === filterCategory)
-    : materials;
+  const filteredMaterials = filterCategory === 'all'
+    ? materials
+    : materials.filter(m => m.category === filterCategory);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <DashboardLayout currentPage="/daycare/materials">
+      <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Learning Materials</h1>
@@ -238,7 +239,7 @@ export default function LearningMaterials() {
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     <SelectItem value="LESSON_PLANS">Lesson Plans</SelectItem>
                     <SelectItem value="WORKSHEETS">Worksheets</SelectItem>
                     <SelectItem value="ACTIVITIES">Activities</SelectItem>
@@ -413,6 +414,6 @@ export default function LearningMaterials() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

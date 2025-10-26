@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,7 @@ export default function VaccinationTracking() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState('');
-  const [filterPatient, setFilterPatient] = useState('');
+  const [filterPatient, setFilterPatient] = useState('all');
   const [formData, setFormData] = useState({
     vaccineName: '',
     vaccineType: '',
@@ -136,7 +137,7 @@ export default function VaccinationTracking() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const filteredVaccinations = filterPatient
+  const filteredVaccinations = filterPatient && filterPatient !== 'all'
     ? vaccinations.filter(v => v.patientId === filterPatient)
     : vaccinations;
 
@@ -146,8 +147,8 @@ export default function VaccinationTracking() {
   }).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <DashboardLayout currentPage="/health/vaccinations">
+      <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Vaccination Tracking</h1>
@@ -196,7 +197,7 @@ export default function VaccinationTracking() {
                     <SelectValue placeholder="All patients" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All patients</SelectItem>
+                    <SelectItem value="all">All patients</SelectItem>
                     {patients.map((patient) => (
                       <SelectItem key={patient.id} value={patient.id}>
                         {patient.firstName} {patient.lastName}
@@ -387,6 +388,6 @@ export default function VaccinationTracking() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

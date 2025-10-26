@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,8 +99,8 @@ export default function HealthRecords() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <DashboardLayout currentPage="/health/records">
+      <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Health Records</h1>
@@ -296,6 +297,6 @@ export default function HealthRecords() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

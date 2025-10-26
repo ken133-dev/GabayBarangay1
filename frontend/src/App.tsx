@@ -33,6 +33,7 @@ import SKDashboard from './pages/sk/SKDashboard';
 import EventManagement from './pages/sk/EventManagement';
 import EventRegistration from './pages/sk/EventRegistration';
 import AttendanceAnalytics from './pages/sk/AttendanceAnalytics';
+import SKAnalytics from './pages/sk/SKAnalytics';
 
 // Admin Module
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -40,6 +41,10 @@ import UserManagement from './pages/admin/UserManagement';
 import PendingApprovals from './pages/admin/PendingApprovals';
 import SystemSettings from './pages/admin/SystemSettings';
 import AuditLogs from './pages/admin/AuditLogs';
+import AnnouncementManagement from './pages/admin/AnnouncementManagement';
+import RoleManagement from './pages/admin/RoleManagement';
+import BackupManagement from './pages/admin/BackupManagement';
+import BroadcastManagement from './pages/admin/BroadcastManagement';
 
 // Public Pages
 import Homepage from './pages/public/Homepage';
@@ -47,12 +52,14 @@ import PublicEvents from './pages/public/PublicEvents';
 import Announcements from './pages/public/Announcements';
 import Contact from './pages/public/Contact';
 import Services from './pages/public/Services';
+import AboutBarangay from './pages/public/AboutBarangay';
 
 // Reports Module
 import ReportsDashboard from './pages/reports/ReportsDashboard';
 import HealthReports from './pages/reports/HealthReports';
 import DaycareReports from './pages/reports/DaycareReports';
 import SKReports from './pages/reports/SKReports';
+import CrossModuleAnalytics from './pages/reports/CrossModuleAnalytics';
 
 
 function App() {
@@ -67,6 +74,7 @@ function App() {
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/about" element={<AboutBarangay />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
@@ -175,6 +183,11 @@ function App() {
                 <AttendanceAnalytics />
               </ProtectedRoute>
             } />
+            <Route path="/sk/analytics" element={
+              <ProtectedRoute allowedRoles={[UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+                <SKAnalytics />
+              </ProtectedRoute>
+            } />
 
             {/* Admin Module - Protected for Admin roles */}
             <Route path="/admin" element={
@@ -202,6 +215,26 @@ function App() {
                 <AuditLogs />
               </ProtectedRoute>
             } />
+            <Route path="/admin/announcements" element={
+              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+                <AnnouncementManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users/roles" element={
+              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+                <RoleManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings/backup" element={
+              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+                <BackupManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings/notifications" element={
+              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+                <BroadcastManagement />
+              </ProtectedRoute>
+            } />
 
             {/* Reports Module - Protected for authenticated users */}
             <Route path="/reports" element={
@@ -222,6 +255,11 @@ function App() {
             <Route path="/reports/sk" element={
               <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
                 <SKReports />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports/analytics" element={
+              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+                <CrossModuleAnalytics />
               </ProtectedRoute>
             } />
 

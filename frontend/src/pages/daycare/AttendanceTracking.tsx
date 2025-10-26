@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,12 +152,12 @@ export default function AttendanceTracking() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+    <DashboardLayout currentPage="/daycare/attendance">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Attendance Tracking</h1>
-            <p className="text-gray-600 mt-1">Daily attendance management for daycare students</p>
+            <p className="text-muted-foreground">Daily attendance management for daycare students</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -406,6 +407,6 @@ export default function AttendanceTracking() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

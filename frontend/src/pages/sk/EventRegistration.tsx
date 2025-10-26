@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -188,13 +189,11 @@ export default function EventRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Event Registration</h1>
-            <p className="text-gray-600 mt-1">Register for community events and manage registrations</p>
-          </div>
+    <DashboardLayout currentPage="/sk/event-registration">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Event Registration</h1>
+          <p className="text-muted-foreground">Register for community events and manage registrations</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-4 mb-6">
@@ -449,6 +448,6 @@ export default function EventRegistration() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -123,18 +123,24 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
 // ========== SYSTEM SETTINGS ==========
 export const getSystemSettings = async (req: AuthRequest, res: Response) => {
   try {
-    // For now, return default settings since we don't have a settings table
-    const settings = {
-      barangayName: 'Barangay Binitayan',
-      barangayAddress: 'Daraga, Albay, Philippines',
-      barangayEmail: 'contact@barangaybinitayan.gov.ph',
-      barangayContactNumber: '+63 XXX XXX XXXX',
-      systemName: 'TheyCare Portal',
-      systemVersion: '1.0.0',
-      maintenanceMode: false,
-      allowRegistration: true,
-      requireApproval: true
-    };
+    let settings = await prisma.systemSettings.findFirst();
+
+    // Create default settings if none exist
+    if (!settings) {
+      settings = await prisma.systemSettings.create({
+        data: {
+          barangayName: 'Barangay Binitayan',
+          barangayAddress: 'Daraga, Albay, Philippines',
+          barangayEmail: 'contact@barangaybinitayan.gov.ph',
+          barangayContactNumber: '+63 XXX XXX XXXX',
+          systemName: 'TheyCare Portal',
+          systemVersion: '1.0.0',
+          maintenanceMode: false,
+          allowRegistration: true,
+          requireApproval: true
+        }
+      });
+    }
 
     res.json({ settings });
   } catch (error) {
@@ -145,7 +151,32 @@ export const getSystemSettings = async (req: AuthRequest, res: Response) => {
 
 export const updateSystemSettings = async (req: AuthRequest, res: Response) => {
   try {
-    const settings = req.body;
+    const updateData = req.body;
+
+    // Get existing settings or create if none exist
+    let settings = await prisma.systemSettings.findFirst();
+    
+    if (!settings) {
+      settings = await prisma.systemSettings.create({
+        data: {
+          barangayName: 'Barangay Binitayan',
+          barangayAddress: 'Daraga, Albay, Philippines',
+          barangayEmail: 'contact@barangaybinitayan.gov.ph',
+          barangayContactNumber: '+63 XXX XXX XXXX',
+          systemName: 'TheyCare Portal',
+          systemVersion: '1.0.0',
+          maintenanceMode: false,
+          allowRegistration: true,
+          requireApproval: true
+        }
+      });
+    }
+
+    // Update settings
+    const updatedSettings = await prisma.systemSettings.update({
+      where: { id: settings.id },
+      data: updateData
+    });
 
     // Log the action
     await prisma.auditLog.create({
@@ -153,14 +184,105 @@ export const updateSystemSettings = async (req: AuthRequest, res: Response) => {
         userId: req.user!.userId,
         action: 'Updated system settings',
         entityType: 'SYSTEM',
-        changes: settings
+        entityId: settings.id,
+        changes: updateData
       }
     });
 
-    res.json({ settings, message: 'System settings updated successfully' });
+    res.json({ settings: updatedSettings, message: 'System settings updated successfully' });
   } catch (error) {
     console.error('Update system settings error:', error);
     res.status(500).json({ error: 'Failed to update system settings' });
+  }
+};
+
+// ========== ANNOUNCEMENTS ==========
+export const getAnnouncements = async (req: AuthRequest, res: Response) => {
+  try {
+    const announcements = await prisma.announcement.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ announcements });
+  } catch (error) {
+    console.error('Get announcements error:', error);
+    res.status(500).json({ error: 'Failed to fetch announcements' });
+  }
+};
+
+export const createAnnouncement = async (req: AuthRequest, res: Response) => {
+  try {
+    const { title, content, category, priority, isPublic, expiresAt } = req.body;
+
+    const createData: any = {
+      title,
+      content,
+      category,
+      priority: priority || 'NORMAL',
+      isPublic: isPublic !== undefined ? isPublic : true,
+      publishedBy: req.user!.userId
+    };
+
+    // Handle expiresAt field - convert to Date or set to null
+    if (expiresAt && expiresAt.trim() !== '') {
+      createData.expiresAt = new Date(expiresAt);
+    }
+
+    const announcement = await prisma.announcement.create({
+      data: createData
+    });
+
+    res.status(201).json({ announcement, message: 'Announcement created successfully' });
+  } catch (error) {
+    console.error('Create announcement error:', error);
+    res.status(500).json({ error: 'Failed to create announcement' });
+  }
+};
+
+export const updateAnnouncement = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, content, category, priority, isPublic, expiresAt } = req.body;
+
+    const updateData: any = {
+      title,
+      content,
+      category,
+      priority,
+      isPublic
+    };
+
+    // Handle expiresAt field - convert to Date or set to null
+    if (expiresAt && expiresAt.trim() !== '') {
+      updateData.expiresAt = new Date(expiresAt);
+    } else {
+      updateData.expiresAt = null;
+    }
+
+    const announcement = await prisma.announcement.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json({ announcement, message: 'Announcement updated successfully' });
+  } catch (error) {
+    console.error('Update announcement error:', error);
+    res.status(500).json({ error: 'Failed to update announcement' });
+  }
+};
+
+export const deleteAnnouncement = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.announcement.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Announcement deleted successfully' });
+  } catch (error) {
+    console.error('Delete announcement error:', error);
+    res.status(500).json({ error: 'Failed to delete announcement' });
   }
 };
 

@@ -5,7 +5,11 @@ import {
   updateUserStatus,
   getSystemSettings,
   updateSystemSettings,
-  getAuditLogs
+  getAuditLogs,
+  getAnnouncements,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement
 } from '../controllers/admin.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -42,6 +46,31 @@ router.put('/settings',
   authenticate, 
   authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'), 
   updateSystemSettings
+);
+
+// ========== ANNOUNCEMENTS ==========
+router.get('/announcements', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  getAnnouncements
+);
+
+router.post('/announcements', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  createAnnouncement
+);
+
+router.put('/announcements/:id', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  updateAnnouncement
+);
+
+router.delete('/announcements/:id', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  deleteAnnouncement
 );
 
 // ========== AUDIT LOGS ==========

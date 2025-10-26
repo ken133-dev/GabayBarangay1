@@ -33,26 +33,10 @@ export const getPublicStats = async (req: Request, res: Response) => {
 // ========== PUBLIC FEATURES ==========
 export const getPublicFeatures = async (req: Request, res: Response) => {
   try {
-    const features = [
-      {
-        title: 'Maternal Health Services',
-        description: 'Comprehensive prenatal and postnatal care tracking, appointment scheduling, and health record management for expecting and new mothers.',
-        iconType: 'heart',
-        stats: 'Active'
-      },
-      {
-        title: 'Daycare Management',
-        description: 'Complete daycare operations including student registration, attendance tracking, progress reports, and learning materials management.',
-        iconType: 'baby',
-        stats: 'Active'
-      },
-      {
-        title: 'SK Youth Engagement',
-        description: 'Sangguniang Kabataan event management, youth program coordination, and community engagement activities for local youth development.',
-        iconType: 'users',
-        stats: 'Active'
-      }
-    ];
+    const features = await prisma.feature.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
 
     res.json({ features });
   } catch (error) {
@@ -64,12 +48,10 @@ export const getPublicFeatures = async (req: Request, res: Response) => {
 // ========== PUBLIC BENEFITS ==========
 export const getPublicBenefits = async (req: Request, res: Response) => {
   try {
-    const benefits = [
-      { text: 'Secure & Private', iconType: 'shield' },
-      { text: 'Digital Records', iconType: 'fileText' },
-      { text: '24/7 Access', iconType: 'calendar' },
-      { text: 'Real-time Reports', iconType: 'barChart' }
-    ];
+    const benefits = await prisma.benefit.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
 
     res.json({ benefits });
   } catch (error) {
@@ -81,26 +63,10 @@ export const getPublicBenefits = async (req: Request, res: Response) => {
 // ========== PUBLIC TESTIMONIALS ==========
 export const getPublicTestimonials = async (req: Request, res: Response) => {
   try {
-    const testimonials = [
-      {
-        name: 'Barangay Captain',
-        role: 'Local Government Leader',
-        content: 'TheyCare Portal has significantly improved our community service delivery and administrative efficiency.',
-        rating: 5
-      },
-      {
-        name: 'Health Worker',
-        role: 'Barangay Health Worker',
-        content: 'Managing patient records and appointments has never been easier. This system saves us hours of paperwork.',
-        rating: 5
-      },
-      {
-        name: 'SK Chairman',
-        role: 'Youth Leader',
-        content: 'Our youth programs are now better organized and we can track participation more effectively.',
-        rating: 5
-      }
-    ];
+    const testimonials = await prisma.testimonial.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
 
     res.json({ testimonials });
   } catch (error) {
@@ -112,14 +78,12 @@ export const getPublicTestimonials = async (req: Request, res: Response) => {
 // ========== PUBLIC SERVICE FEATURES ==========
 export const getPublicServiceFeatures = async (req: Request, res: Response) => {
   try {
-    const features = [
-      'Progressive Web App (PWA) technology for mobile-first experience',
-      'Offline capability for uninterrupted service access',
-      'Role-based access control for secure data management',
-      'Real-time notifications and updates',
-      'Digital certificate generation and validation',
-      'Comprehensive reporting and analytics dashboard'
-    ];
+    const serviceFeatures = await prisma.serviceFeature.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
+
+    const features = serviceFeatures.map(sf => sf.description);
 
     res.json({ features });
   } catch (error) {

@@ -92,7 +92,7 @@ export default function PatientManagement() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-primary">
+            <h1 className="text-3xl md:text-4xl font-bold">
               Patient Management
             </h1>
             <p className="text-muted-foreground">
@@ -245,12 +245,12 @@ export default function PatientManagement() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <Card className="border-l-4 border-l-primary">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Patients
               </CardTitle>
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{patients.length}</div>
@@ -260,12 +260,12 @@ export default function PatientManagement() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-primary">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 New This Month
               </CardTitle>
-              <Plus className="h-5 w-5 text-primary" />
+              <Plus className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
@@ -277,12 +277,12 @@ export default function PatientManagement() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-primary">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Active Cases
               </CardTitle>
-              <Activity className="h-5 w-5 text-primary" />
+              <Activity className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{patients.length}</div>

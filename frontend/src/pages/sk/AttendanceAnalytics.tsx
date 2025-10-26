@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -213,12 +214,12 @@ export default function AttendanceAnalytics() {
   const selectedEventStats = eventStats.find(s => s.eventId === selectedEvent);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+    <DashboardLayout currentPage="/sk/attendance">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Attendance Analytics</h1>
-            <p className="text-gray-600 mt-1">Track and analyze event participation</p>
+            <p className="text-muted-foreground">Track and analyze event participation</p>
           </div>
           {isStaff && (
             <Button onClick={() => setShowMarkDialog(true)}>
@@ -478,6 +479,6 @@ export default function AttendanceAnalytics() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

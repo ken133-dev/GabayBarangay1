@@ -425,7 +425,77 @@ model Announcement {
   @@map("announcements")
 }
 
+// ========== PUBLIC CONTENT MANAGEMENT ==========
+
+model Feature {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  iconType    String
+  stats       String   @default("Active")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("features")
+}
+
+model Benefit {
+  id        String   @id @default(cuid())
+  text      String
+  iconType  String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("benefits")
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  content   String
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("testimonials")
+}
+
+model ServiceFeature {
+  id          String   @id @default(cuid())
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("service_features")
+}
+
 // ========== SYSTEM ADMINISTRATION ==========
+
+model SystemSettings {
+  id                    String   @id @default(cuid())
+  barangayName          String
+  barangayAddress       String
+  barangayEmail         String
+  barangayContactNumber String
+  systemName            String
+  systemVersion         String
+  maintenanceMode       Boolean  @default(false)
+  allowRegistration     Boolean  @default(true)
+  requireApproval       Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("system_settings")
+}
 
 model AuditLog {
   id          String   @id @default(cuid())

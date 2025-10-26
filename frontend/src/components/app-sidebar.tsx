@@ -109,7 +109,7 @@ const getRoleBasedNavigation = (userRole: string) => {
         },
         {
           title: "Announcements",
-          url: "/announcements",
+          url: "/admin/announcements",
           icon: Megaphone,
         },
         {

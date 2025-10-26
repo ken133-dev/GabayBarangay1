@@ -210,6 +210,26 @@ async function main() {
   console.log('  12. Visitor (Pending):  visitor@theycare.local (PENDING status)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('\n💡 Login with any of these accounts to test role-based sidebar navigation!');
+
+  // Initialize system settings
+  await prisma.systemSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      barangayName: 'Barangay Binitayan',
+      barangayAddress: 'Daraga, Albay, Philippines',
+      barangayEmail: 'contact@barangaybinitayan.gov.ph',
+      barangayContactNumber: '+63 XXX XXX XXXX',
+      systemName: 'TheyCare Portal',
+      systemVersion: '1.0.0',
+      maintenanceMode: false,
+      allowRegistration: true,
+      requireApproval: true
+    }
+  });
+
+  console.log('\n⚙️  System settings initialized!');
 }
 
 main()

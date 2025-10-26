@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,12 +145,12 @@ export default function CertificateGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <DashboardLayout currentPage="/health/certificates">
+      <div className="space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-bold">
               Certificate Generator
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -253,8 +254,8 @@ export default function CertificateGenerator() {
                   </p>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-muted p-4 rounded-md">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Note:</strong> Certificate will be issued by {user.firstName} {user.lastName}.
                     A unique certificate number will be generated automatically.
                   </p>
@@ -273,20 +274,20 @@ export default function CertificateGenerator() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-l-4 border-l-green-500">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Certificates</CardTitle>
-              <FileText className="h-5 w-5 text-green-500" />
+              <FileText className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{certificates.length}</div>
               <p className="text-xs text-muted-foreground mt-1">All generated certificates</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-blue-500">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-              <Calendar className="h-5 w-5 text-blue-500" />
+              <Calendar className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
@@ -299,13 +300,13 @@ export default function CertificateGenerator() {
               <p className="text-xs text-muted-foreground mt-1">Issued this month</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-purple-500">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Active Certificates</CardTitle>
-              <Award className="h-5 w-5 text-purple-500" />
+              <Award className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-3xl font-bold">
                 {certificates.filter(c => !isExpired(c.expiryDate)).length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Valid certificates</p>
@@ -395,6 +396,6 @@ export default function CertificateGenerator() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
