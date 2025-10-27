@@ -307,7 +307,11 @@ export const getHealthStats = async (req: AuthRequest, res: Response) => {
     const bhwUsers = await prisma.user.findMany({
       where: {
         roles: {
-          hasSome: ['BHW', 'BHW_COORDINATOR']
+          some: {
+            name: {
+              in: ['BHW', 'BHW_COORDINATOR']
+            }
+          }
         }
       },
       include: {
@@ -423,13 +427,17 @@ export const getCrossModuleAnalytics = async (req: AuthRequest, res: Response) =
 
     // Get user counts by role
     const users = await prisma.user.findMany({
-      select: { id: true, roles: true }
+      include: {
+        roles: {
+          select: { name: true }
+        }
+      }
     });
     
     const roleCount: Record<string, number> = {};
     users.forEach(user => {
       user.roles.forEach(role => {
-        roleCount[role] = (roleCount[role] || 0) + 1;
+        roleCount[role.name] = (roleCount[role.name] || 0) + 1;
       });
     });
     

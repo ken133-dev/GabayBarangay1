@@ -518,7 +518,8 @@ export const getEventAnalytics = async (req: AuthRequest, res: Response) => {
     // Role breakdown
     const roleBreakdown = users.reduce((acc: any, user) => {
       user.roles.forEach(role => {
-        acc[role] = (acc[role] || 0) + 1;
+        const roleName = typeof role === 'string' ? role : role.name;
+        acc[roleName] = (acc[roleName] || 0) + 1;
       });
       return acc;
     }, {});

@@ -29,7 +29,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
+    // Create user (roles will be assigned by admin)
     const user = await prisma.user.create({
       data: {
         email,
@@ -39,17 +39,7 @@ export const register = async (req: Request, res: Response) => {
         middleName,
         contactNumber,
         address,
-        roles: role ? [role as any] : ['VISITOR' as any],
         status: 'PENDING' // Account needs approval
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        roles: true,
-        status: true,
-        createdAt: true
       }
     });
 
@@ -69,7 +59,15 @@ export const login = async (req: Request, res: Response) => {
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        roles: {
+          select: {
+            name: true,
+            displayName: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -92,11 +90,12 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
+    const roleNames = user.roles.map(r => r.name);
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      role: user.roles[0] || 'VISITOR',
-      roles: user.roles
+      role: roleNames[0] || 'VISITOR',
+      roles: roleNames
     });
 
     res.json({
@@ -107,8 +106,8 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.roles[0] || 'VISITOR',
-        roles: user.roles,
+        role: roleNames[0] || 'VISITOR',
+        roles: roleNames,
         status: user.status,
         otpEnabled: user.otpEnabled
       },
@@ -126,19 +125,13 @@ export const getProfile = async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
-        contactNumber: true,
-        address: true,
-        roles: true,
-        status: true,
-        otpEnabled: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          select: {
+            name: true,
+            displayName: true
+          }
+        }
       }
     });
 
@@ -146,7 +139,25 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user });
+    // Format response to match frontend expectations
+    const roleNames = user.roles.map(r => r.name);
+    const response = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName,
+      contactNumber: user.contactNumber,
+      address: user.address,
+      role: roleNames[0] || 'VISITOR',
+      roles: roleNames,
+      status: user.status,
+      otpEnabled: user.otpEnabled,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    res.json({ user: response });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -201,7 +212,15 @@ export const sendLoginOTP = async (req: Request, res: Response) => {
 
     // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        roles: {
+          select: {
+            name: true,
+            displayName: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -248,7 +267,15 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
 
     // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        roles: {
+          select: {
+            name: true,
+            displayName: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -263,11 +290,12 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
+    const roleNames = user.roles.map(r => r.name);
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      role: user.roles[0] || 'VISITOR',
-      roles: user.roles
+      role: roleNames[0] || 'VISITOR',
+      roles: roleNames
     });
 
     res.json({
@@ -278,8 +306,8 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.roles[0] || 'VISITOR',
-        roles: user.roles,
+        role: roleNames[0] || 'VISITOR',
+        roles: roleNames,
         status: user.status
       }
     });

@@ -5,19 +5,31 @@ import prisma from '../utils/prisma';
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        roles: true,
-        status: true,
-        createdAt: true
+      include: {
+        roles: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ users });
+    // Transform users to include role names as strings and select only needed fields
+    const transformedUsers = users.map(user => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      contactNumber: user.contactNumber,
+      address: user.address,
+      status: user.status,
+      otpEnabled: user.otpEnabled,
+      createdAt: user.createdAt,
+      roles: user.roles.map(r => r.name)
+    }));
+
+    res.json({ users: transformedUsers });
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });

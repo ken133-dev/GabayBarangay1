@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { UserRole } from '@/types';
 
 // Auth & Main Pages
 import Login from './pages/Login';
@@ -112,96 +111,96 @@ function App() {
 
             {/* Health Services Module - Protected for BHW roles */}
             <Route path="/health" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
                 <HealthDashboard />
               </ProtectedRoute>
             } />
             <Route path="/health/patients" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
                 <PatientManagement />
               </ProtectedRoute>
             } />
             <Route path="/health/appointments" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
                 <AppointmentScheduling />
               </ProtectedRoute>
             } />
             <Route path="/health/records" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
                 <HealthRecords />
               </ProtectedRoute>
             } />
             <Route path="/health/my-records" element={
-              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['PARENT_RESIDENT']}>
                 <MyHealthRecords />
               </ProtectedRoute>
             } />
             <Route path="/health/vaccinations" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
                 <VaccinationTracking />
               </ProtectedRoute>
             } />
             <Route path="/health/certificates" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
                 <CertificateGenerator />
               </ProtectedRoute>
             } />
 
             {/* Daycare Module - Protected for Daycare roles */}
             <Route path="/daycare" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
                 <DaycareDashboard />
               </ProtectedRoute>
             } />
             <Route path="/daycare/registration" element={
-              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['PARENT_RESIDENT']}>
                 <ChildRegistrationForm />
               </ProtectedRoute>
             } />
             <Route path="/daycare/registrations" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
                 <StudentRegistration />
               </ProtectedRoute>
             } />
             <Route path="/daycare/attendance" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN']}>
                 <AttendanceTracking />
               </ProtectedRoute>
             } />
             <Route path="/daycare/progress" element={
-              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['PARENT_RESIDENT']}>
                 <MyChildrenProgress />
               </ProtectedRoute>
             } />
             <Route path="/daycare/progress-reports" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
                 <ProgressReports />
               </ProtectedRoute>
             } />
             <Route path="/daycare/resources" element={
-              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['PARENT_RESIDENT']}>
                 <EducationalResources />
               </ProtectedRoute>
             } />
             <Route path="/daycare/materials" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
                 <LearningMaterials />
               </ProtectedRoute>
             } />
 
             {/* SK Engagement Module - Protected for SK roles */}
             <Route path="/sk" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
                 <SKDashboard />
               </ProtectedRoute>
             } />
             <Route path="/sk/events" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
                 <EventManagement />
               </ProtectedRoute>
             } />
             <Route path="/sk/events/:id" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
                 <EventDetails />
               </ProtectedRoute>
             } />
@@ -211,64 +210,64 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/events/my-registrations" element={
-              <ProtectedRoute allowedRoles={[UserRole.PARENT_RESIDENT]}>
+              <ProtectedRoute allowedRoles={['PARENT_RESIDENT']}>
                 <MyEventRegistrations />
               </ProtectedRoute>
             } />
             <Route path="/sk/attendance" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
                 <AttendanceAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/sk/analytics" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
                 <SKAnalytics />
               </ProtectedRoute>
             } />
 
             {/* Admin Module - Protected for Admin roles */}
             <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <AdminDashboard />
               </ProtectedRoute>
             } />
             <Route path="/admin/users" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <UserManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/users/pending" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <PendingApprovals />
               </ProtectedRoute>
             } />
             <Route path="/admin/settings" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
                 <SystemSettings />
               </ProtectedRoute>
             } />
             <Route path="/admin/settings/audit-logs" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
                 <AuditLogs />
               </ProtectedRoute>
             } />
             <Route path="/admin/announcements" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <AnnouncementManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/users/roles" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
                 <RoleManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/settings/backup" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
                 <BackupManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/settings/notifications" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <BroadcastManagement />
               </ProtectedRoute>
             } />
@@ -280,27 +279,27 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/reports/health" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <HealthReports />
               </ProtectedRoute>
             } />
             <Route path="/reports/daycare" element={
-              <ProtectedRoute allowedRoles={[UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <DaycareReports />
               </ProtectedRoute>
             } />
             <Route path="/reports/sk" element={
-              <ProtectedRoute allowedRoles={[UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <SKReports />
               </ProtectedRoute>
             } />
             <Route path="/reports/analytics" element={
-              <ProtectedRoute allowedRoles={[UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <CrossModuleAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/reports/health/stats" element={
-              <ProtectedRoute allowedRoles={[UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL]}>
+              <ProtectedRoute allowedRoles={['BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
                 <HealthStats />
               </ProtectedRoute>
             } />

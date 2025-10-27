@@ -10,22 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========== ENUMS ==========
-
-enum UserRole {
-  SYSTEM_ADMIN
-  BARANGAY_CAPTAIN
-  BARANGAY_OFFICIAL
-  BHW
-  BHW_COORDINATOR
-  DAYCARE_STAFF
-  DAYCARE_TEACHER
-  SK_OFFICER
-  SK_CHAIRMAN
-  PARENT_RESIDENT
-  VISITOR
-}
-
 enum AccountStatus {
   PENDING
   ACTIVE
@@ -76,6 +60,67 @@ enum NotificationType {
   IN_APP
 }
 
+enum Permission {
+  // User Management
+  USER_CREATE
+  USER_READ
+  USER_UPDATE
+  USER_DELETE
+  USER_SUSPEND
+  USER_APPROVE
+  
+  // Role Management
+  ROLE_CREATE
+  ROLE_READ
+  ROLE_UPDATE
+  ROLE_DELETE
+  
+  // Health Services
+  PATIENT_CREATE
+  PATIENT_READ
+  PATIENT_UPDATE
+  PATIENT_DELETE
+  APPOINTMENT_MANAGE
+  IMMUNIZATION_MANAGE
+  
+  // Daycare Management
+  DAYCARE_STUDENT_MANAGE
+  DAYCARE_ATTENDANCE_MANAGE
+  DAYCARE_REPORTS
+  
+  // SK Management
+  EVENT_MANAGE
+  EVENT_ATTENDANCE
+  
+  // System Administration
+  SYSTEM_SETTINGS
+  AUDIT_LOGS
+  ANNOUNCEMENTS_MANAGE
+  
+  // Reports
+  REPORTS_VIEW
+  REPORTS_GENERATE
+}
+
+// ========== ROLE MANAGEMENT ==========
+
+model Role {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  displayName String
+  description String?
+  permissions Permission[]
+  isSystem    Boolean     @default(false) // System roles cannot be deleted
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  users       User[]      @relation("UserRoles")
+
+  @@map("roles")
+}
+
 // ========== USER MANAGEMENT ==========
 
 model User {
@@ -87,7 +132,7 @@ model User {
   middleName    String?
   contactNumber String?
   address       String?
-  roles         UserRole[]    @default([VISITOR])
+  roles         Role[]        @relation("UserRoles") // Changed from UserRole[] enum
   status        AccountStatus @default(PENDING)
   otpEnabled    Boolean       @default(false)
   createdAt     DateTime      @default(now())

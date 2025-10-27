@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/index';
 import {
   Users,
   Calendar,
@@ -36,19 +35,19 @@ export default function Dashboard() {
     // Only redirect if user has exactly ONE role (single-role users)
     if (userRoles.length === 1) {
       const singleRole = userRoles[0];
-      if ([UserRole.BHW, UserRole.BHW_COORDINATOR].includes(singleRole)) {
+      if (['BHW', 'BHW_COORDINATOR'].includes(singleRole)) {
         navigate('/health');
         return;
       }
-      if ([UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER].includes(singleRole)) {
+      if (['DAYCARE_STAFF', 'DAYCARE_TEACHER'].includes(singleRole)) {
         navigate('/daycare');
         return;
       }
-      if ([UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN].includes(singleRole)) {
+      if (['SK_OFFICER', 'SK_CHAIRMAN'].includes(singleRole)) {
         navigate('/sk');
         return;
       }
-      if ([UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN].includes(singleRole)) {
+      if (['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(singleRole)) {
         navigate('/admin');
         return;
       }
@@ -64,20 +63,20 @@ export default function Dashboard() {
   const userRoles = user.roles || (user.role ? [user.role] : []);
   
   // Get role display info
-  const getRoleInfo = (role: UserRole) => {
-    const roleConfig = {
-      [UserRole.SYSTEM_ADMIN]: { label: 'System Admin', variant: 'destructive' as const, icon: Shield },
-      [UserRole.BARANGAY_CAPTAIN]: { label: 'Barangay Captain', variant: 'default' as const, icon: Crown },
-      [UserRole.BARANGAY_OFFICIAL]: { label: 'Barangay Official', variant: 'secondary' as const, icon: UserCheck },
-      [UserRole.BHW]: { label: 'BHW', variant: 'outline' as const, icon: Stethoscope },
-      [UserRole.BHW_COORDINATOR]: { label: 'BHW Coordinator', variant: 'outline' as const, icon: Stethoscope },
-      [UserRole.DAYCARE_STAFF]: { label: 'Daycare Staff', variant: 'outline' as const, icon: GraduationCap },
-      [UserRole.DAYCARE_TEACHER]: { label: 'Daycare Teacher', variant: 'outline' as const, icon: GraduationCap },
-      [UserRole.SK_OFFICER]: { label: 'SK Officer', variant: 'outline' as const, icon: Trophy },
-      [UserRole.SK_CHAIRMAN]: { label: 'SK Chairman', variant: 'outline' as const, icon: Trophy },
-      [UserRole.PARENT_RESIDENT]: { label: 'Parent/Resident', variant: 'secondary' as const, icon: Users },
-      [UserRole.PATIENT]: { label: 'Patient', variant: 'secondary' as const, icon: Heart },
-      [UserRole.VISITOR]: { label: 'Visitor', variant: 'outline' as const, icon: Users },
+  const getRoleInfo = (role: string) => {
+    const roleConfig: Record<string, { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary'; icon: React.ComponentType<{ className?: string }> }> = {
+      'SYSTEM_ADMIN': { label: 'System Admin', variant: 'destructive' as const, icon: Shield },
+      'BARANGAY_CAPTAIN': { label: 'Barangay Captain', variant: 'default' as const, icon: Crown },
+      'BARANGAY_OFFICIAL': { label: 'Barangay Official', variant: 'secondary' as const, icon: UserCheck },
+      'BHW': { label: 'BHW', variant: 'outline' as const, icon: Stethoscope },
+      'BHW_COORDINATOR': { label: 'BHW Coordinator', variant: 'outline' as const, icon: Stethoscope },
+      'DAYCARE_STAFF': { label: 'Daycare Staff', variant: 'outline' as const, icon: GraduationCap },
+      'DAYCARE_TEACHER': { label: 'Daycare Teacher', variant: 'outline' as const, icon: GraduationCap },
+      'SK_OFFICER': { label: 'SK Officer', variant: 'outline' as const, icon: Trophy },
+      'SK_CHAIRMAN': { label: 'SK Chairman', variant: 'outline' as const, icon: Trophy },
+      'PARENT_RESIDENT': { label: 'Parent/Resident', variant: 'secondary' as const, icon: Users },
+      'PATIENT': { label: 'Patient', variant: 'secondary' as const, icon: Heart },
+      'VISITOR': { label: 'Visitor', variant: 'outline' as const, icon: Users },
     };
     return roleConfig[role] || { label: role.replace('_', ' '), variant: 'outline' as const, icon: Users };
   };
@@ -90,7 +89,7 @@ export default function Dashboard() {
       description: 'Manage patients and appointments',
       icon: Heart,
       path: '/health',
-      available: userRoles.some(role => [UserRole.BHW, UserRole.BHW_COORDINATOR, UserRole.SYSTEM_ADMIN].includes(role))
+      available: userRoles.some(role => ['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'].includes(role))
     },
     // Daycare Services
     {
@@ -98,7 +97,7 @@ export default function Dashboard() {
       description: 'Manage student enrollment and attendance',
       icon: Baby,
       path: '/daycare',
-      available: userRoles.some(role => [UserRole.DAYCARE_STAFF, UserRole.DAYCARE_TEACHER, UserRole.SYSTEM_ADMIN].includes(role))
+      available: userRoles.some(role => ['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'].includes(role))
     },
     // SK Services
     {
@@ -106,7 +105,7 @@ export default function Dashboard() {
       description: 'Manage youth events and engagement',
       icon: Calendar,
       path: '/sk',
-      available: userRoles.some(role => [UserRole.SK_OFFICER, UserRole.SK_CHAIRMAN, UserRole.SYSTEM_ADMIN].includes(role))
+      available: userRoles.some(role => ['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'].includes(role))
     },
     // Admin Services
     {
@@ -114,7 +113,7 @@ export default function Dashboard() {
       description: 'System administration and user management',
       icon: Users,
       path: '/admin',
-      available: userRoles.some(role => [UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BARANGAY_OFFICIAL].includes(role))
+      available: userRoles.some(role => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))
     },
     // Reports
     {
@@ -122,7 +121,7 @@ export default function Dashboard() {
       description: 'View comprehensive reports and insights',
       icon: Activity,
       path: '/reports',
-      available: userRoles.some(role => [UserRole.SYSTEM_ADMIN, UserRole.BARANGAY_CAPTAIN, UserRole.BHW_COORDINATOR, UserRole.SK_CHAIRMAN].includes(role))
+      available: userRoles.some(role => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BHW_COORDINATOR', 'SK_CHAIRMAN'].includes(role))
     },
     // Public Services
     {
@@ -130,14 +129,14 @@ export default function Dashboard() {
       description: 'View health records and appointments',
       icon: Heart,
       path: '/health/my-records',
-      available: userRoles.some(role => [UserRole.PATIENT, UserRole.PARENT_RESIDENT].includes(role))
+      available: userRoles.some(role => ['PATIENT', 'PARENT_RESIDENT'].includes(role))
     },
     {
       title: 'Daycare Registration',
       description: 'Register children for daycare',
       icon: Baby,
       path: '/daycare/registration',
-      available: userRoles.some(role => [UserRole.PARENT_RESIDENT].includes(role))
+      available: userRoles.some(role => ['PARENT_RESIDENT'].includes(role))
     },
     {
       title: 'Profile Settings',

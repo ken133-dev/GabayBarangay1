@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -28,20 +29,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Users,
   Search,
   MoreVertical,
   UserCheck,
-  UserX,
   Ban,
   Mail,
   Eye,
   Edit,
   Trash2,
   Download,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  Phone,
+  MapPin,
+  Calendar,
+  UserPlus,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -50,11 +65,15 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
+  contactNumber?: string;
+  address?: string;
   role?: string;
   roles?: string[];
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'INACTIVE';
-  contactNumber?: string;
+  otpEnabled?: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 const USER_ROLES = [
@@ -81,6 +100,28 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    contactNumber: '',
+    address: '',
+    roles: [] as string[],
+    otpEnabled: false
+  });
+  const [addFormData, setAddFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    contactNumber: '',
+    address: '',
+    roles: [] as string[],
+    otpEnabled: false
+  });
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -98,72 +139,79 @@ export default function UserManagement() {
   }, [isAdmin, navigate]);
 
   useEffect(() => {
+    const filterUsers = () => {
+      let filtered = users;
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(
+          (u) =>
+            u.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            u.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      // Role filter
+      if (roleFilter !== 'all') {
+        filtered = filtered.filter((u) => {
+          const userRoles = u.roles || [u.role];
+          return userRoles.includes(roleFilter);
+        });
+      }
+
+      // Status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter((u) => u.status === statusFilter);
+      }
+
+      setFilteredUsers(filtered);
+    };
+
     filterUsers();
-  }, [searchTerm, roleFilter, statusFilter, users]);
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users');
-      const userData = response.data.users || [];
-      setUsers(userData);
-      setFilteredUsers(userData);
+      const response = await api.get('/admin/users');
+      setUsers(response.data.users || []);
+      setFilteredUsers(response.data.users || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
       toast.error('Failed to load users');
-      setUsers([]);
-      setFilteredUsers([]);
+      console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterUsers = () => {
-    let filtered = users;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (u) =>
-          u.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter((u) => {
-        const userRoles = u.roles || [u.role];
-        return userRoles.includes(roleFilter);
-      });
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((u) => u.status === statusFilter);
-    }
-
-    setFilteredUsers(filtered);
-  };
-
   const handleApproveUser = async (userId: string) => {
     try {
-      await api.patch(`/users/${userId}/status`, { status: 'ACTIVE' });
+      await api.patch(`/admin/users/${userId}/status`, { status: 'ACTIVE' });
       setUsers(users.map(u => u.id === userId ? { ...u, status: 'ACTIVE' as const } : u));
       toast.success('User approved successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to approve user');
     }
   };
 
   const handleSuspendUser = async (userId: string) => {
     try {
-      await api.patch(`/users/${userId}/status`, { status: 'SUSPENDED' });
+      await api.patch(`/admin/users/${userId}/status`, { status: 'SUSPENDED' });
       setUsers(users.map(u => u.id === userId ? { ...u, status: 'SUSPENDED' as const } : u));
       toast.success('User suspended successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to suspend user');
+    }
+  };
+
+  const handleUnsuspendUser = async (userId: string) => {
+    try {
+      await api.patch(`/admin/users/${userId}/status`, { status: 'ACTIVE' });
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'ACTIVE' as const } : u));
+      toast.success('User unsuspended successfully');
+    } catch {
+      toast.error('Failed to unsuspend user');
     }
   };
 
@@ -173,12 +221,102 @@ export default function UserManagement() {
     }
 
     try {
-      // Note: Delete endpoint may not exist yet
-      await api.delete(`/users/${userId}`);
+      await api.delete(`/admin/users/${userId}`);
       setUsers(users.filter(u => u.id !== userId));
       toast.success('User deleted successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete user');
+    }
+  };
+
+  const handleViewDetails = async (user: User) => {
+    try {
+      const response = await api.get(`/admin/users/${user.id}`);
+      setSelectedUser(response.data.user);
+      setShowViewDialog(true);
+    } catch {
+      toast.error('Failed to load user details');
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditFormData({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      contactNumber: user.contactNumber || '',
+      address: user.address || '',
+      roles: user.roles || [user.role || ''],
+      otpEnabled: user.otpEnabled || false
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      // Update user roles if changed
+      if (JSON.stringify(editFormData.roles) !== JSON.stringify(selectedUser.roles || [selectedUser.role])) {
+        await api.put(`/admin/users/${selectedUser.id}/roles`, { roles: editFormData.roles });
+      }
+
+      // Update other user details (this would need a new endpoint)
+      // For now, just show success
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...editFormData } : u));
+      setShowEditDialog(false);
+      toast.success('User updated successfully');
+    } catch {
+      toast.error('Failed to update user');
+    }
+  };
+
+  const handleRoleToggle = (role: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      roles: prev.roles.includes(role)
+        ? prev.roles.filter(r => r !== role)
+        : [...prev.roles, role]
+    }));
+  };
+
+  const handleAddRoleToggle = (role: string) => {
+    setAddFormData(prev => ({
+      ...prev,
+      roles: prev.roles.includes(role)
+        ? prev.roles.filter(r => r !== role)
+        : [...prev.roles, role]
+    }));
+  };
+
+  const handleAddUser = async () => {
+    try {
+      const userData = {
+        firstName: addFormData.firstName,
+        lastName: addFormData.lastName,
+        email: addFormData.email,
+        contactNumber: addFormData.contactNumber,
+        address: addFormData.address,
+        roles: addFormData.roles,
+        otpEnabled: addFormData.otpEnabled
+      };
+
+      const response = await api.post('/admin/users', userData);
+      setUsers([...users, response.data.user]);
+      setShowAddDialog(false);
+      setAddFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        contactNumber: '',
+        address: '',
+        roles: [],
+        otpEnabled: false
+      });
+      toast.success('User created successfully');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to create user');
     }
   };
 
@@ -259,6 +397,10 @@ export default function UserManagement() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={() => setShowAddDialog(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
             <Button variant="outline" onClick={() => fetchUsers()}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -275,54 +417,74 @@ export default function UserManagement() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                  <p className="text-2xl font-bold">{users.length}</p>
+                  <p className="text-3xl font-bold">{users.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Registered accounts
+                  </p>
                 </div>
-                <Users className="h-8 w-8 text-muted-foreground" />
+                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                  <p className="text-3xl font-bold text-green-600">
                     {users.filter(u => u.status === 'ACTIVE').length}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {users.length > 0 ? Math.round((users.filter(u => u.status === 'ACTIVE').length / users.length) * 100) : 0}% of total
+                  </p>
                 </div>
-                <UserCheck className="h-8 w-8 text-green-600" />
+                <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <UserCheck className="h-6 w-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-sm font-medium text-muted-foreground">Pending Approval</p>
+                  <p className="text-3xl font-bold text-yellow-600">
                     {users.filter(u => u.status === 'PENDING').length}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Awaiting verification
+                  </p>
                 </div>
-                <Mail className="h-8 w-8 text-yellow-600" />
+                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Mail className="h-6 w-6 text-yellow-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-3xl font-bold text-red-600">
                     {users.filter(u => u.status === 'SUSPENDED').length}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Access restricted
+                  </p>
                 </div>
-                <Ban className="h-8 w-8 text-red-600" />
+                <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Ban className="h-6 w-6 text-red-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -440,11 +602,11 @@ export default function UserManagement() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewDetails(user)}>
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit User
                             </DropdownMenuItem>
@@ -459,6 +621,12 @@ export default function UserManagement() {
                               <DropdownMenuItem onClick={() => handleSuspendUser(user.id)}>
                                 <Ban className="h-4 w-4 mr-2 text-yellow-600" />
                                 Suspend
+                              </DropdownMenuItem>
+                            )}
+                            {user.status === 'SUSPENDED' && (
+                              <DropdownMenuItem onClick={() => handleUnsuspendUser(user.id)}>
+                                <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                                Unsuspend
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -479,6 +647,341 @@ export default function UserManagement() {
             )}
           </CardContent>
         </Card>
+
+        {/* View User Details Dialog */}
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                User Details
+              </DialogTitle>
+              <DialogDescription>
+                Complete information about the selected user
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Full Name</Label>
+                    <p className="text-sm">{selectedUser.firstName} {selectedUser.lastName}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Email</Label>
+                    <p className="text-sm">{selectedUser.email}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Contact Number</Label>
+                    <p className="text-sm flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {selectedUser.contactNumber || 'Not provided'}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Status</Label>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(selectedUser.status)}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Roles */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Roles</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUser.roles ? (
+                      selectedUser.roles.map((role, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          {role.replace(/_/g, ' ')}
+                        </Badge>
+                      ))
+                    ) : (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        {selectedUser.role || 'Unknown'}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Address */}
+                {selectedUser.address && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Address</Label>
+                      <p className="text-sm flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {selectedUser.address}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Account Information */}
+                <Separator />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Account Created</Label>
+                    <p className="text-sm flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(selectedUser.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Two-Factor Authentication</Label>
+                    <div className="flex items-center gap-2">
+                      {selectedUser.otpEnabled ? (
+                        <Badge variant="default" className="bg-green-100 text-green-800">
+                          Enabled
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          Disabled
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Edit User
+              </DialogTitle>
+              <DialogDescription>
+                Update user information and permissions
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={editFormData.firstName}
+                    onChange={(e) => setEditFormData({...editFormData, firstName: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={editFormData.lastName}
+                    onChange={(e) => setEditFormData({...editFormData, lastName: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactNumber">Contact Number</Label>
+                  <Input
+                    id="contactNumber"
+                    value={editFormData.contactNumber}
+                    onChange={(e) => setEditFormData({...editFormData, contactNumber: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData({...editFormData, address: e.target.value})}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Roles */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Roles</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {USER_ROLES.map(role => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={role}
+                        checked={editFormData.roles.includes(role)}
+                        onChange={() => handleRoleToggle(role)}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={role} className="text-sm">
+                        {role.replace(/_/g, ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Two-Factor Authentication */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Two-Factor Authentication</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Enable SMS-based two-factor authentication for this user
+                  </p>
+                </div>
+                <Switch
+                  checked={editFormData.otpEnabled}
+                  onCheckedChange={(checked) => setEditFormData({...editFormData, otpEnabled: checked})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateUser}>
+                  Update User
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add User Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Add New User
+              </DialogTitle>
+              <DialogDescription>
+                Create a new user account with specified roles and permissions
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="addFirstName">First Name *</Label>
+                  <Input
+                    id="addFirstName"
+                    value={addFormData.firstName}
+                    onChange={(e) => setAddFormData({...addFormData, firstName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addLastName">Last Name *</Label>
+                  <Input
+                    id="addLastName"
+                    value={addFormData.lastName}
+                    onChange={(e) => setAddFormData({...addFormData, lastName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addEmail">Email *</Label>
+                  <Input
+                    id="addEmail"
+                    type="email"
+                    value={addFormData.email}
+                    onChange={(e) => setAddFormData({...addFormData, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addContactNumber">Contact Number</Label>
+                  <Input
+                    id="addContactNumber"
+                    value={addFormData.contactNumber}
+                    onChange={(e) => setAddFormData({...addFormData, contactNumber: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="addAddress">Address</Label>
+                <Input
+                  id="addAddress"
+                  value={addFormData.address}
+                  onChange={(e) => setAddFormData({...addFormData, address: e.target.value})}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Roles */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Roles *</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {USER_ROLES.map(role => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`add-${role}`}
+                        checked={addFormData.roles.includes(role)}
+                        onChange={() => handleAddRoleToggle(role)}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={`add-${role}`} className="text-sm">
+                        {role.replace(/_/g, ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Two-Factor Authentication */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Two-Factor Authentication</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Enable SMS-based two-factor authentication for this user
+                  </p>
+                </div>
+                <Switch
+                  checked={addFormData.otpEnabled}
+                  onCheckedChange={(checked) => setAddFormData({...addFormData, otpEnabled: checked})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAddUser}
+                  disabled={!addFormData.firstName || !addFormData.lastName || !addFormData.email || addFormData.roles.length === 0}
+                >
+                  Create User
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

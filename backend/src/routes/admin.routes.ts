@@ -2,16 +2,25 @@ import { Router } from 'express';
 import {
   getAdminStats,
   getAllUsers,
+  createUser,
+  updateUser,
   updateUserStatus,
   updateUserRole,
   updateUserRoles,
+  getUserById,
+  deleteUser,
   getSystemSettings,
   updateSystemSettings,
   getAuditLogs,
   getAnnouncements,
   createAnnouncement,
   updateAnnouncement,
-  deleteAnnouncement
+  deleteAnnouncement,
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  getPermissions
 } from '../controllers/admin.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -25,10 +34,22 @@ router.get('/stats',
 );
 
 // ========== USER MANAGEMENT ==========
+router.post('/users', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  createUser
+);
+
 router.get('/users', 
   authenticate, 
   authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
   getAllUsers
+);
+
+router.get('/users/:userId', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  getUserById
 );
 
 router.patch('/users/:userId/status', 
@@ -47,6 +68,12 @@ router.put('/users/:userId/roles',
   authenticate, 
   authorize('SYSTEM_ADMIN'), 
   updateUserRoles
+);
+
+router.put('/users/:userId', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  updateUser
 );
 
 // ========== SYSTEM SETTINGS ==========
@@ -87,11 +114,35 @@ router.delete('/announcements/:id',
   deleteAnnouncement
 );
 
-// ========== AUDIT LOGS ==========
-router.get('/audit-logs', 
+// ========== ROLE MANAGEMENT ==========
+router.get('/roles', 
   authenticate, 
-  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'), 
-  getAuditLogs
+  authorize('SYSTEM_ADMIN'), 
+  getRoles
+);
+
+router.post('/roles', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  createRole
+);
+
+router.put('/roles/:roleId', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  updateRole
+);
+
+router.delete('/roles/:roleId', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  deleteRole
+);
+
+router.get('/permissions', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  getPermissions
 );
 
 export default router;

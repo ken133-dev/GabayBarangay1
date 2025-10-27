@@ -1,10 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: string[]; // Changed from UserRole[] to string[]
   requireActive?: boolean;
 }
 
@@ -48,7 +47,7 @@ export default function ProtectedRoute({
   }
 
   // Check role-based access
-  const userRoles = user.roles || (user.role ? [user.role] : [UserRole.VISITOR]);
+  const userRoles = user.roles || (user.role ? [user.role] : ['VISITOR']);
   if (allowedRoles && !userRoles.some(role => allowedRoles.includes(role))) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">

@@ -29,8 +29,8 @@ export interface User {
   middleName?: string;
   contactNumber?: string;
   address?: string;
-  role?: UserRole; // Legacy single role support
-  roles?: UserRole[]; // New multi-role support
+  role?: string; // Legacy single role support (string)
+  roles?: string[]; // New multi-role support (array of role names)
   status: AccountStatus;
   otpEnabled?: boolean;
   createdAt: string;
