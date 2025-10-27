@@ -179,23 +179,35 @@ export const updateProfile = async (req: Request, res: Response) => {
         address,
         otpEnabled
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
-        contactNumber: true,
-        address: true,
-        roles: true,
-        status: true,
-        otpEnabled: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        roles: {
+          select: {
+            name: true,
+            displayName: true
+          }
+        }
       }
     });
 
-    res.json({ user });
+    // Format response to match frontend expectations
+    const roleNames = user.roles.map(r => r.name);
+    const response = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName,
+      contactNumber: user.contactNumber,
+      address: user.address,
+      role: roleNames[0] || 'VISITOR',
+      roles: roleNames,
+      status: user.status,
+      otpEnabled: user.otpEnabled,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    res.json({ user: response });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });

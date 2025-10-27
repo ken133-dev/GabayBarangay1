@@ -93,7 +93,11 @@ export default function Profile() {
     });
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: string | unknown) => {
+    if (typeof role !== 'string') {
+      return <Badge variant="outline">Unknown Role</Badge>;
+    }
+
     const roleColors: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
       SYSTEM_ADMIN: 'destructive',
       BARANGAY_CAPTAIN: 'default',
