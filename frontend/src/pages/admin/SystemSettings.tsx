@@ -248,22 +248,22 @@ export default function SystemSettings() {
               <Settings className="mr-2 h-4 w-4" />
               General
             </TabsTrigger>
-            <TabsTrigger value="notifications">
+            {/* <TabsTrigger value="notifications">
               <Bell className="mr-2 h-4 w-4" />
               Notifications
-            </TabsTrigger>
-            <TabsTrigger value="security">
+            </TabsTrigger> */}
+            {/* <TabsTrigger value="security">
               <Shield className="mr-2 h-4 w-4" />
               Security
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="backup">
               <Database className="mr-2 h-4 w-4" />
               Backup
             </TabsTrigger>
-            <TabsTrigger value="system">
+            {/* <TabsTrigger value="system">
               <Globe className="mr-2 h-4 w-4" />
               System
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           {/* General Settings */}

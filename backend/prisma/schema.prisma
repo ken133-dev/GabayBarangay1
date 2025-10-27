@@ -568,11 +568,22 @@ model SystemSettings {
   barangayAddress       String
   barangayEmail         String
   barangayContactNumber String
+  captainName           String?
   systemName            String
   systemVersion         String
+  timezone              String   @default("Asia/Manila")
+  dateFormat            String   @default("MM/DD/YYYY")
   maintenanceMode       Boolean  @default(false)
   allowRegistration     Boolean  @default(true)
   requireApproval       Boolean  @default(true)
+  emailNotifications    Boolean  @default(true)
+  smsNotifications      Boolean  @default(false)
+  autoApproveRegistrations Boolean @default(false)
+  sessionTimeout        Int      @default(30)
+  maxLoginAttempts      Int      @default(5)
+  passwordExpiryDays    Int      @default(90)
+  backupFrequency       String   @default("daily")
+  lastBackupDate        DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

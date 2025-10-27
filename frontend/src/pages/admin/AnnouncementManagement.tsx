@@ -16,7 +16,7 @@ interface Announcement {
   title: string;
   content: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  isPublic: boolean;
   createdBy: string;
   createdAt: string;
   publishedAt?: string;
@@ -31,7 +31,7 @@ export default function AnnouncementManagement() {
     title: '',
     content: '',
     priority: 'MEDIUM',
-    status: 'DRAFT'
+    isPublic: false
   });
   const navigate = useNavigate();
 
@@ -70,7 +70,7 @@ export default function AnnouncementManagement() {
       }
       setShowDialog(false);
       setEditingId(null);
-      setFormData({ title: '', content: '', priority: 'MEDIUM', status: 'DRAFT' });
+      setFormData({ title: '', content: '', priority: 'MEDIUM', isPublic: false });
       fetchAnnouncements();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to save announcement');
@@ -82,7 +82,7 @@ export default function AnnouncementManagement() {
       title: announcement.title,
       content: announcement.content,
       priority: announcement.priority,
-      status: announcement.status
+      isPublic: announcement.isPublic
     });
     setEditingId(announcement.id);
     setShowDialog(true);
@@ -119,13 +119,12 @@ export default function AnnouncementManagement() {
     return <Badge variant={variants[priority as keyof typeof variants]}>{priority}</Badge>;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (isPublic: boolean) => {
     const variants = {
-      DRAFT: 'outline',
-      PUBLISHED: 'default',
-      ARCHIVED: 'secondary'
+      true: 'default',
+      false: 'outline'
     } as const;
-    return <Badge variant={variants[status as keyof typeof variants]}>{status}</Badge>;
+    return <Badge variant={variants[isPublic.toString() as keyof typeof variants]}>{isPublic ? 'Published' : 'Draft'}</Badge>;
   };
 
   return (
@@ -157,7 +156,7 @@ export default function AnnouncementManagement() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-green-600">
-                {announcements.filter(a => a.status === 'PUBLISHED').length}
+                {announcements.filter(a => a.isPublic).length}
               </p>
             </CardContent>
           </Card>
@@ -167,7 +166,7 @@ export default function AnnouncementManagement() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-orange-600">
-                {announcements.filter(a => a.status === 'DRAFT').length}
+                {announcements.filter(a => !a.isPublic).length}
               </p>
             </CardContent>
           </Card>
@@ -199,7 +198,7 @@ export default function AnnouncementManagement() {
                       </div>
                       <div className="flex gap-2 ml-4">
                         {getPriorityBadge(announcement.priority)}
-                        {getStatusBadge(announcement.status)}
+                        {getStatusBadge(announcement.isPublic)}
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-4">
@@ -215,7 +214,7 @@ export default function AnnouncementManagement() {
                         <Button size="sm" variant="outline" onClick={() => handleEdit(announcement)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {announcement.status === 'DRAFT' && (
+                        {!announcement.isPublic && (
                           <Button size="sm" onClick={() => handlePublish(announcement.id)}>
                             <Eye className="h-4 w-4 mr-1" />
                             Publish
@@ -276,13 +275,13 @@ export default function AnnouncementManagement() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Status</label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                  <Select value={formData.isPublic.toString()} onValueChange={(value) => setFormData({...formData, isPublic: value === 'true'})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DRAFT">Draft</SelectItem>
-                      <SelectItem value="PUBLISHED">Published</SelectItem>
+                      <SelectItem value="false">Draft</SelectItem>
+                      <SelectItem value="true">Published</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

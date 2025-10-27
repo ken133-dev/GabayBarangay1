@@ -605,14 +605,14 @@ export const getAnnouncements = async (req: AuthRequest, res: Response) => {
 
 export const createAnnouncement = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, content, category, priority, isPublic, expiresAt } = req.body;
+    const { title, content, priority, isPublic, category, expiresAt } = req.body;
 
     const createData: any = {
       title,
       content,
+      priority: priority || 'MEDIUM',
+      isPublic: isPublic !== undefined ? isPublic : false,
       category,
-      priority: priority || 'NORMAL',
-      isPublic: isPublic !== undefined ? isPublic : true,
       publishedBy: req.user!.userId
     };
 
@@ -635,14 +635,14 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
 export const updateAnnouncement = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, content, category, priority, isPublic, expiresAt } = req.body;
+    const { title, content, priority, isPublic, category, expiresAt } = req.body;
 
     const updateData: any = {
       title,
       content,
-      category,
       priority,
-      isPublic
+      isPublic,
+      category
     };
 
     // Handle expiresAt field - convert to Date or set to null
@@ -676,6 +676,22 @@ export const deleteAnnouncement = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Delete announcement error:', error);
     res.status(500).json({ error: 'Failed to delete announcement' });
+  }
+};
+
+export const publishAnnouncement = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const announcement = await prisma.announcement.update({
+      where: { id },
+      data: { isPublic: true }
+    });
+
+    res.json({ announcement, message: 'Announcement published successfully' });
+  } catch (error) {
+    console.error('Publish announcement error:', error);
+    res.status(500).json({ error: 'Failed to publish announcement' });
   }
 };
 

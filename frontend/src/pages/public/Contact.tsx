@@ -14,21 +14,36 @@ export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [contactInfo, setContactInfo] = useState({
+    barangayName: '',
     address: '',
     phone: '',
     email: '',
     hours: ''
   });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set static contact info to avoid authentication issues
-    setContactInfo({
-      address: 'Barangay Binitayan, Daraga, Albay, Philippines',
-      phone: '+63 XXX XXX XXXX',
-      email: 'contact@barangaybinitayan.gov.ph',
-      hours: 'Mon - Fri: 8am - 5pm'
-    });
+    const fetchContactInfo = async () => {
+      try {
+        const response = await api.get('/public/contact');
+        setContactInfo(response.data.contactInfo);
+      } catch (error) {
+        console.error('Failed to fetch contact info:', error);
+        // Fallback to default values
+        setContactInfo({
+          barangayName: 'Barangay Binitayan',
+          address: 'Daraga, Albay, Philippines',
+          phone: '+63 XXX XXX XXXX',
+          email: 'contact@barangaybinitayan.gov.ph',
+          hours: 'Mon - Fri: 8am - 5pm, Sat: 8am - 12pm'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContactInfo();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +75,7 @@ export default function Contact() {
                 <Mail className="h-8 w-8 text-primary-foreground" />
               </div>
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Contact Us
+                Contact {contactInfo.barangayName || 'Us'}
               </h1>
               <p className="text-muted-foreground text-lg md:text-xl">
                 We're here to help. Reach out to us with any questions or concerns.
@@ -133,7 +148,7 @@ export default function Contact() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shrink-0">
                         <MapPin className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div>
@@ -142,7 +157,7 @@ export default function Contact() {
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shrink-0">
                         <Phone className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div>
@@ -151,7 +166,7 @@ export default function Contact() {
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shrink-0">
                         <Mail className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div>
@@ -160,7 +175,7 @@ export default function Contact() {
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shrink-0">
                         <Clock className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div>

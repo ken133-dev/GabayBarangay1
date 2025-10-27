@@ -16,6 +16,7 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
+  publishAnnouncement,
   getRoles,
   createRole,
   updateRole,
@@ -106,6 +107,12 @@ router.put('/announcements/:id',
   authenticate, 
   authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
   updateAnnouncement
+);
+
+router.patch('/announcements/:id/publish', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  publishAnnouncement
 );
 
 router.delete('/announcements/:id', 

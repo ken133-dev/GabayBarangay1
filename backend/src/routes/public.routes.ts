@@ -5,7 +5,8 @@ import {
   getPublicBenefits,
   getPublicTestimonials,
   getPublicServiceFeatures,
-  getPublicAnnouncements
+  getPublicAnnouncements,
+  getPublicContactInfo
 } from '../controllers/public.controller';
 
 const router = Router();
@@ -19,5 +20,8 @@ router.get('/service-features', getPublicServiceFeatures);
 
 // ========== PUBLIC ANNOUNCEMENTS ==========
 router.get('/announcements', getPublicAnnouncements);
+
+// ========== PUBLIC CONTACT INFORMATION ==========
+router.get('/contact', getPublicContactInfo);
 
 export default router;
