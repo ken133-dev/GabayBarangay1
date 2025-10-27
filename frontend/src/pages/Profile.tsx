@@ -167,8 +167,16 @@ export default function Profile() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Role</Label>
-                <div>{profile.role && getRoleBadge(profile.role)}</div>
+                <Label>Role(s)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {profile.roles && profile.roles.length > 0 ? (
+                    profile.roles.map((role, index) => (
+                      <span key={index}>{getRoleBadge(role)}</span>
+                    ))
+                  ) : (
+                    profile.role && getRoleBadge(profile.role)
+                  )}
+                </div>
               </div>
               <Button type="submit">Save Changes</Button>
             </form>

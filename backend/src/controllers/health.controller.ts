@@ -241,6 +241,53 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
   }
 };
 
+export const updateAppointment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { patientId, appointmentDate, appointmentType, notes } = req.body;
+
+    const appointment = await prisma.appointment.update({
+      where: { id },
+      data: {
+        ...(patientId && { patientId }),
+        ...(appointmentDate && { appointmentDate: new Date(appointmentDate) }),
+        ...(appointmentType && { appointmentType }),
+        ...(notes !== undefined && { notes })
+      },
+      include: {
+        patient: true,
+        healthWorker: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    res.json({ message: 'Appointment updated successfully', appointment });
+  } catch (error) {
+    console.error('Update appointment error:', error);
+    res.status(500).json({ error: 'Failed to update appointment' });
+  }
+};
+
+export const deleteAppointment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.appointment.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Appointment deleted successfully' });
+  } catch (error) {
+    console.error('Delete appointment error:', error);
+    res.status(500).json({ error: 'Failed to delete appointment' });
+  }
+};
+
 export const getMyAppointments = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;

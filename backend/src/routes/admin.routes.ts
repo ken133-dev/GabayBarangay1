@@ -74,7 +74,7 @@ router.put('/users/:userId/role',
 
 router.put('/users/:userId/roles', 
   authenticate, 
-  authorize('SYSTEM_ADMIN'), 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
   updateUserRoles
 );
 

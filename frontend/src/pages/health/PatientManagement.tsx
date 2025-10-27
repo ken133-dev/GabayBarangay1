@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Search, Plus, UserPlus, Users, Activity } from 'lucide-react';
+import { Search, Plus, UserPlus, Users, Activity, Edit, Trash2, Eye, Heart, Calendar, MapPin, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Patient } from '@/types/index';
 
@@ -27,8 +27,11 @@ export default function PatientManagement() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [residents, setResidents] = useState<Resident[]>([]);
   const [isResident, setIsResident] = useState(false);
@@ -37,6 +40,7 @@ export default function PatientManagement() {
   const [guardianIsResident, setGuardianIsResident] = useState(false);
   const [selectedGuardian, setSelectedGuardian] = useState<Resident | null>(null);
   const [guardianSearchQuery, setGuardianSearchQuery] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -83,6 +87,11 @@ export default function PatientManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isEditing) {
+      await handleUpdatePatient(e);
+      return;
+    }
     
     // Validate resident selection if toggle is on
     if (isResident && !selectedResident) {
@@ -171,14 +180,68 @@ export default function PatientManagement() {
     setGuardianSearchQuery('');
   };
 
-  const handleViewDetails = (patient: Patient) => {
+  const handleEditPatient = (patient: Patient) => {
     setSelectedPatient(patient);
-    setShowDetailsDialog(true);
+    setIsEditing(true);
+    setFormData({
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      middleName: patient.middleName || '',
+      dateOfBirth: patient.dateOfBirth.split('T')[0], // Format for date input
+      gender: patient.gender,
+      bloodType: patient.bloodType || '',
+      address: patient.address,
+      contactNumber: patient.contactNumber,
+      emergencyContact: patient.emergencyContact,
+      guardianName: patient.guardianName || '',
+      birthWeight: patient.birthWeight?.toString() || '',
+      birthLength: patient.birthLength?.toString() || '',
+      motherName: patient.motherName || '',
+      fatherName: patient.fatherName || '',
+      placeOfBirth: patient.placeOfBirth || ''
+    });
+    setShowAddDialog(true);
+  };
+
+  const handleDeletePatient = async (patient: Patient) => {
+    try {
+      await api.delete(`/health/patients/${patient.id}`);
+      setPatients(patients.filter(p => p.id !== patient.id));
+      toast.success('Patient deleted successfully');
+      setShowDeleteDialog(false);
+      setPatientToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete patient:', error);
+      toast.error('Failed to delete patient');
+    }
+  };
+
+  const handleUpdatePatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatient) return;
+
+    try {
+      const response = await api.put(`/health/patients/${selectedPatient.id}`, formData);
+      setPatients(patients.map(p => p.id === selectedPatient.id ? response.data.patient : p));
+      toast.success('Patient updated successfully');
+      setShowAddDialog(false);
+      resetForm();
+      setIsEditing(false);
+      setSelectedPatient(null);
+    } catch (error) {
+      console.error('Failed to update patient:', error);
+      toast.error('Failed to update patient');
+    }
   };
 
   const filteredPatients = patients.filter(patient =>
     `${patient.firstName} ${patient.middleName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleViewDetails = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowDetailsDialog(true);
+  };
 
   const calculateAge = (dob: string) => {
     const birthDate = new Date(dob);
@@ -213,9 +276,12 @@ export default function PatientManagement() {
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Register New Patient</DialogTitle>
+                <DialogTitle className="flex items-center gap-2">
+                  {isEditing ? <Edit className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                  {isEditing ? 'Edit Patient' : 'Register New Patient'}
+                </DialogTitle>
                 <DialogDescription>
-                  Fill in the patient's information to create a new record
+                  {isEditing ? 'Update patient information and medical records' : 'Fill in the patient\'s information to create a new record'}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -540,10 +606,19 @@ export default function PatientManagement() {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setShowAddDialog(false);
+                    if (isEditing) {
+                      setIsEditing(false);
+                      setSelectedPatient(null);
+                      resetForm();
+                    }
+                  }}>
                     Cancel
                   </Button>
-                  <Button type="submit">Register Patient</Button>
+                  <Button type="submit" className="bg-primary hover:bg-primary/90">
+                    {isEditing ? 'Update Patient' : 'Register Patient'}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
@@ -563,82 +638,121 @@ export default function PatientManagement() {
               <div className="space-y-6">
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
+                  <Card className="bg-linear-to-br from-blue-50 to-blue-100 border-blue-200">
                     <CardHeader>
-                      <CardTitle className="text-lg">Personal Information</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
+                        <Users className="h-5 w-5" />
+                        Personal Information
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                        <p className="text-sm">{selectedPatient.firstName} {selectedPatient.middleName} {selectedPatient.lastName}</p>
+                      <div className="flex items-center gap-3">
+                        <Users className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-blue-900">Full Name</Label>
+                          <p className="text-sm text-blue-800">{selectedPatient.firstName} {selectedPatient.middleName} {selectedPatient.lastName}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Age</Label>
-                        <p className="text-sm">{calculateAge(selectedPatient.dateOfBirth)} years old</p>
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-blue-900">Age</Label>
+                          <p className="text-sm text-blue-800">{calculateAge(selectedPatient.dateOfBirth)} years old</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Date of Birth</Label>
-                        <p className="text-sm">{new Date(selectedPatient.dateOfBirth).toLocaleDateString()}</p>
+                      <div className="flex items-center gap-3">
+                        <Heart className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-blue-900">Date of Birth</Label>
+                          <p className="text-sm text-blue-800">{new Date(selectedPatient.dateOfBirth).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Gender</Label>
-                        <p className="text-sm">{selectedPatient.gender}</p>
+                      <div className="flex items-center gap-3">
+                        <Activity className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-blue-900">Gender</Label>
+                          <p className="text-sm text-blue-800">{selectedPatient.gender}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Blood Type</Label>
-                        <p className="text-sm">{selectedPatient.bloodType || 'Not specified'}</p>
+                      <div className="flex items-center gap-3">
+                        <Heart className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-blue-900">Blood Type</Label>
+                          <p className="text-sm text-blue-800">{selectedPatient.bloodType || 'Not specified'}</p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="bg-linear-to-br from-green-50 to-green-100 border-green-200">
                     <CardHeader>
-                      <CardTitle className="text-lg">Contact Information</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2 text-green-900">
+                        <Phone className="h-5 w-5" />
+                        Contact Information
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Address</Label>
-                        <p className="text-sm">{selectedPatient.address}</p>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-green-900">Address</Label>
+                          <p className="text-sm text-green-800">{selectedPatient.address}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Contact Number</Label>
-                        <p className="text-sm">{selectedPatient.contactNumber}</p>
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-green-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-green-900">Contact Number</Label>
+                          <p className="text-sm text-green-800">{selectedPatient.contactNumber}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Emergency Contact</Label>
-                        <p className="text-sm">{selectedPatient.emergencyContact}</p>
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-green-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-green-900">Emergency Contact</Label>
+                          <p className="text-sm text-green-800">{selectedPatient.emergencyContact}</p>
+                        </div>
                       </div>
                       {selectedPatient.guardianName && (
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Guardian</Label>
-                          <p className="text-sm">{selectedPatient.guardianName}</p>
+                        <div className="flex items-center gap-3">
+                          <Users className="h-4 w-4 text-green-600" />
+                          <div>
+                            <Label className="text-sm font-medium text-green-900">Guardian</Label>
+                            <p className="text-sm text-green-800">{selectedPatient.guardianName}</p>
+                          </div>
                         </div>
                       )}
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Registration Date</Label>
-                        <p className="text-sm">{selectedPatient.createdAt ? new Date(selectedPatient.createdAt).toLocaleDateString() : 'N/A'}</p>
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-green-600" />
+                        <div>
+                          <Label className="text-sm font-medium text-green-900">Registration Date</Label>
+                          <p className="text-sm text-green-800">{selectedPatient.createdAt ? new Date(selectedPatient.createdAt).toLocaleDateString() : 'N/A'}</p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Medical Summary */}
-                <Card>
+                <Card className="bg-linear-to-br from-muted/5 to-muted/10 border-muted/20">
                   <CardHeader>
-                    <CardTitle className="text-lg">Medical Summary</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-muted-foreground" />
+                      Medical Summary
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">0</div>
+                      <div className="text-center p-4 border border-border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+                        <div className="text-2xl font-bold text-foreground">0</div>
                         <div className="text-sm text-muted-foreground">Total Appointments</div>
                       </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">0</div>
+                      <div className="text-center p-4 border border-border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+                        <div className="text-2xl font-bold text-foreground">0</div>
                         <div className="text-sm text-muted-foreground">Health Records</div>
                       </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">0</div>
+                      <div className="text-center p-4 border border-border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+                        <div className="text-2xl font-bold text-foreground">0</div>
                         <div className="text-sm text-muted-foreground">Vaccinations</div>
                       </div>
                     </div>
@@ -665,47 +779,57 @@ export default function PatientManagement() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <Card>
+          <Card className="bg-linear-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-primary">
                 Total Patients
               </CardTitle>
-              <Users className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-primary rounded-full">
+                <Users className="h-4 w-4 text-primary-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{patients.length}</div>
+              <div className="text-3xl font-bold text-primary">{patients.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Active patient records
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-linear-to-br from-secondary/5 to-secondary/10 border-secondary/20 hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-secondary-foreground">
                 New This Month
               </CardTitle>
-              <Plus className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-secondary rounded-full">
+                <Plus className="h-4 w-4 text-secondary-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {patients.length}
+              <div className="text-3xl font-bold text-secondary-foreground">
+                {patients.filter(p => {
+                  const createdDate = new Date(p.createdAt || '');
+                  const now = new Date();
+                  return createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
+                }).length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total registered patients
+                Registered this month
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-linear-to-br from-accent/5 to-accent/10 border-accent/20 hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-accent-foreground">
                 Active Cases
               </CardTitle>
-              <Activity className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-accent rounded-full">
+                <Activity className="h-4 w-4 text-accent-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{patients.length}</div>
+              <div className="text-3xl font-bold text-accent-foreground">{patients.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Ongoing treatments
               </p>
@@ -764,31 +888,55 @@ export default function PatientManagement() {
                   </TableHeader>
                   <TableBody>
                     {filteredPatients.map((patient) => (
-                      <TableRow key={patient.id}>
+                      <TableRow key={patient.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">
                           {patient.firstName} {patient.middleName} {patient.lastName}
                         </TableCell>
                         <TableCell>{calculateAge(patient.dateOfBirth)} yrs</TableCell>
                         <TableCell>
-                          <Badge variant={patient.gender === 'Male' ? 'default' : 'secondary'}>
+                          <Badge variant={patient.gender === 'Male' ? 'default' : 'secondary'} className="font-medium">
                             {patient.gender}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{patient.bloodType || 'N/A'}</Badge>
+                          <Badge variant="outline" className="font-medium">
+                            {patient.bloodType || 'N/A'}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm">{patient.contactNumber}</TableCell>
                         <TableCell className="text-sm max-w-xs truncate">
                           {patient.address}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewDetails(patient)}
-                          >
-                            View Details
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewDetails(patient)}
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditPatient(patient)}
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setPatientToDelete(patient);
+                                setShowDeleteDialog(true);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -799,6 +947,57 @@ export default function PatientManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Patient
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this patient record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {patientToDelete && (
+            <div className="py-4">
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-destructive/10 rounded-full">
+                    <Users className="h-4 w-4 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-destructive">
+                      {patientToDelete.firstName} {patientToDelete.middleName} {patientToDelete.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Age: {calculateAge(patientToDelete.dateOfBirth)} • {patientToDelete.gender}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setPatientToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Patient
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

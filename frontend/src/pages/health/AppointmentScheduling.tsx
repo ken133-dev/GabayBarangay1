@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, CalendarPlus, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { Search, CalendarPlus, Calendar, Clock, CheckCircle, Edit, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Appointment, Patient } from '@/types/index';
 
@@ -18,9 +18,12 @@ export default function AppointmentScheduling() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     patientId: '',
     appointmentDate: '',
@@ -55,17 +58,29 @@ export default function AppointmentScheduling() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      patientId: '',
+      appointmentDate: '',
+      appointmentType: 'GENERAL_CHECKUP',
+      notes: ''
+    });
+    setIsEditing(false);
+    setSelectedAppointment(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isEditing) {
+      await handleUpdateAppointment(e);
+      return;
+    }
+    
     try {
       await api.post('/health/appointments', formData);
       setShowAddDialog(false);
-      setFormData({
-        patientId: '',
-        appointmentDate: '',
-        appointmentType: 'GENERAL_CHECKUP',
-        notes: ''
-      });
+      resetForm();
       fetchAppointments();
       toast.success('Appointment scheduled successfully');
     } catch (error: unknown) {
@@ -76,17 +91,64 @@ export default function AppointmentScheduling() {
     }
   };
 
-  const handleViewDetails = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setShowDetailsDialog(true);
-  };
-
   const handleUpdateStatus = async (appointmentId: string, status: string) => {
     try {
       await api.patch(`/health/appointments/${appointmentId}/status`, { status });
       fetchAppointments();
       toast.success(`Appointment ${status.toLowerCase()} successfully`);
       setShowDetailsDialog(false);
+    } catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
+        ? String((error.response.data as { error: string }).error)
+        : 'Failed to update appointment';
+      toast.error(message);
+    }
+  };
+
+  const handleViewDetails = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsDialog(true);
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsEditing(true);
+    setFormData({
+      patientId: appointment.patientId || '',
+      appointmentDate: new Date(appointment.appointmentDate).toISOString().slice(0, 16),
+      appointmentType: appointment.appointmentType,
+      notes: appointment.notes || ''
+    });
+    setShowAddDialog(true);
+  };
+
+  const handleDeleteAppointment = async (appointment: Appointment) => {
+    try {
+      await api.delete(`/health/appointments/${appointment.id}`);
+      setAppointments(appointments.filter(a => a.id !== appointment.id));
+      toast.success('Appointment deleted successfully');
+      setShowDeleteDialog(false);
+      setAppointmentToDelete(null);
+    } catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
+        ? String((error.response.data as { error: string }).error)
+        : 'Failed to delete appointment';
+      toast.error(message);
+    }
+  };
+
+  const handleUpdateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAppointment) return;
+
+    try {
+      await api.put(`/health/appointments/${selectedAppointment.id}`, formData);
+      fetchAppointments();
+      toast.success('Appointment updated successfully');
+      setShowAddDialog(false);
+      resetForm();
+      setIsEditing(false);
+      setSelectedAppointment(null);
     } catch (error: unknown) {
       const message = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
         ? String((error.response.data as { error: string }).error)
@@ -151,9 +213,9 @@ export default function AppointmentScheduling() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Schedule New Appointment</DialogTitle>
+                <DialogTitle>{isEditing ? 'Edit Appointment' : 'Schedule New Appointment'}</DialogTitle>
                 <DialogDescription>
-                  Book a health appointment for a patient
+                  {isEditing ? 'Update appointment details' : 'Book a health appointment for a patient'}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -219,7 +281,7 @@ export default function AppointmentScheduling() {
                   <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Schedule Appointment</Button>
+                  <Button type="submit">{isEditing ? 'Update Appointment' : 'Schedule Appointment'}</Button>
                 </div>
               </form>
             </DialogContent>
@@ -331,48 +393,88 @@ export default function AppointmentScheduling() {
           </DialogContent>
         </Dialog>
 
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Appointment</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this appointment? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {appointmentToDelete && (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">
+                      Patient: {appointmentToDelete.patient?.firstName} {appointmentToDelete.patient?.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Date: {new Date(appointmentToDelete.appointmentDate).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Type: {appointmentToDelete.appointmentType.replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => handleDeleteAppointment(appointmentToDelete)}
+                  >
+                    Delete Appointment
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+          <Card className="bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Total Appointments
               </CardTitle>
-              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{appointments.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{appointments.length}</div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                 All scheduled appointments
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">
                 Upcoming
               </CardTitle>
-              <Clock className="h-5 w-5 text-muted-foreground" />
+              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{upcomingCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">{upcomingCount}</div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                 Scheduled for future
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-linear-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">
                 Completed
               </CardTitle>
-              <CheckCircle className="h-5 w-5 text-muted-foreground" />
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{completedCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-3xl font-bold text-green-900 dark:text-green-100">{completedCount}</div>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                 Finished appointments
               </p>
             </CardContent>
@@ -395,7 +497,7 @@ export default function AppointmentScheduling() {
         </Card>
 
         {/* Appointments Table */}
-        <Card>
+        <Card className="bg-linear-to-br from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 border-slate-200 dark:border-slate-800">
           <CardHeader>
             <CardTitle>Appointment Schedule</CardTitle>
             <CardDescription>
@@ -429,7 +531,7 @@ export default function AppointmentScheduling() {
                   </TableHeader>
                   <TableBody>
                     {filteredAppointments.map((appointment) => (
-                      <TableRow key={appointment.id}>
+                      <TableRow key={appointment.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <TableCell className="font-medium">
                           {appointment.patient?.firstName} {appointment.patient?.lastName}
                         </TableCell>
@@ -446,13 +548,38 @@ export default function AppointmentScheduling() {
                           {appointment.notes || '-'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewDetails(appointment)}
-                          >
-                            View Details
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewDetails(appointment)}
+                              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              title="View appointment details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditAppointment(appointment)}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                              title="Edit appointment details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setAppointmentToDelete(appointment);
+                                setShowDeleteDialog(true);
+                              }}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                              title="Delete appointment"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

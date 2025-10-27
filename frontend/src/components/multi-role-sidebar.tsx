@@ -4,7 +4,7 @@ import * as React from "react"
 import {
   LayoutDashboard,
   Users,
-  Settings,
+  Settings, 
   FileText,
   Database,
   Heart,
@@ -52,7 +52,9 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
   });
 
   // Admin Access (System Admin & Barangay Captain) - check both roles array and single role
-  const isAdmin = hasRole('SYSTEM_ADMIN') || hasRole('BARANGAY_CAPTAIN');
+  const isSystemAdmin = hasRole('SYSTEM_ADMIN');
+  const isBarangayCaptain = hasRole('BARANGAY_CAPTAIN');
+  const isAdmin = isSystemAdmin || isBarangayCaptain;
   const isSingleRoleAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('BARANGAY_CAPTAIN');
   
   if (isAdmin || isSingleRoleAdmin) {
@@ -64,7 +66,7 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
         items: [
           { title: "All Users", url: "/admin/users" },
           { title: "Pending Approvals", url: "/admin/users/pending" },
-          { title: "Role Management", url: "/admin/users/roles" },
+          ...(isSystemAdmin ? [{ title: "Role Management", url: "/admin/users/roles" }] : []),
         ],
       },
       {
@@ -90,8 +92,10 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
         icon: Settings,
         items: [
           { title: "General Settings", url: "/admin/settings" },
-          { title: "Backup Management", url: "/admin/settings/backup" },
-          { title: "Audit Logs", url: "/admin/settings/audit-logs" },
+          ...(isSystemAdmin ? [
+            { title: "Backup Management", url: "/admin/settings/backup" },
+            { title: "Audit Logs", url: "/admin/settings/audit-logs" }
+          ] : []),
           { title: "Notifications", url: "/admin/settings/notifications" },
         ],
       }
@@ -99,7 +103,7 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
     navigation.quickActions.push(
       { name: "Approve User", url: "/admin/users/pending", icon: UserCheck },
       { name: "View Reports", url: "/reports", icon: FileSpreadsheet },
-      { name: "System Backup", url: "/admin/settings/backup", icon: Database }
+      ...(isSystemAdmin ? [{ name: "System Backup", url: "/admin/settings/backup", icon: Database }] : [])
     );
   }
 
@@ -263,6 +267,33 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
       }
     );
   }
+
+  // Deduplicate main navigation items by title, merging subitems if they exist
+  const mainMap = new Map();
+  navigation.main.forEach(item => {
+    if (mainMap.has(item.title)) {
+      const existing = mainMap.get(item.title);
+      if (item.items && existing.items) {
+        // Merge subitems, deduplicating by title
+        const itemMap = new Map();
+        // @ts-expect-error: items is any[] but we know it has title
+        existing.items.forEach(sub => itemMap.set(sub.title, sub));
+        // @ts-expect-error: items is any[] but we know it has title
+        item.items.forEach(sub => itemMap.set(sub.title, sub));
+        existing.items = Array.from(itemMap.values());
+      }
+    } else {
+      mainMap.set(item.title, item);
+    }
+  });
+  navigation.main = Array.from(mainMap.values());
+
+  // Deduplicate quick actions by name
+  const quickMap = new Map();
+  navigation.quickActions.forEach(action => {
+    quickMap.set(action.name, action);
+  });
+  navigation.quickActions = Array.from(quickMap.values());
 
   return navigation;
 };

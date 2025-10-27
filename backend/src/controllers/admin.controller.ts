@@ -175,7 +175,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const where: any = {};
     
     if (status) where.status = status;
-    if (role) where.roles = { has: role };
+    if (role) where.roles = { some: { name: role } };
     if (search) {
       where.OR = [
         { firstName: { contains: search as string, mode: 'insensitive' } },
@@ -393,7 +393,20 @@ export const updateUserRoles = async (req: AuthRequest, res: Response) => {
     }
 
     const invalidRoles = roles.filter(role => !validRoles.includes(role));
-    // ...existing code...
+    if (invalidRoles.length > 0) {
+      return res.status(400).json({ error: `Invalid roles: ${invalidRoles.join(', ')}` });
+    }
+
+    // Update user roles - disconnect all existing roles and connect new ones
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        roles: {
+          set: [], // Clear existing roles
+          connect: roles.map(roleName => ({ name: roleName })) // Connect new roles
+        }
+      }
+    });
 
     // Log the action
     await prisma.auditLog.create({

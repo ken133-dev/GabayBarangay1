@@ -274,7 +274,7 @@ export const sendBroadcast = async (req: AuthRequest, res: Response) => {
     // Get all users matching target roles
     const where: any = {};
     if (targetRoles && targetRoles.length > 0) {
-      where.roles = { hasSome: targetRoles };
+      where.roles = { some: { name: { in: targetRoles } } };
     }
     where.status = 'ACTIVE'; // Only send to active users
 

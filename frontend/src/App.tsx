@@ -111,22 +111,22 @@ function App() {
 
             {/* Health Services Module - Protected for BHW roles */}
             <Route path="/health" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <HealthDashboard />
               </ProtectedRoute>
             } />
             <Route path="/health/patients" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <PatientManagement />
               </ProtectedRoute>
             } />
             <Route path="/health/appointments" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <AppointmentScheduling />
               </ProtectedRoute>
             } />
             <Route path="/health/records" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL', 'PARENT_RESIDENT']}>
                 <HealthRecords />
               </ProtectedRoute>
             } />
@@ -136,19 +136,19 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/health/vaccinations" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <VaccinationTracking />
               </ProtectedRoute>
             } />
             <Route path="/health/certificates" element={
-              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <CertificateGenerator />
               </ProtectedRoute>
             } />
 
             {/* Daycare Module - Protected for Daycare roles */}
             <Route path="/daycare" element={
-              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL', 'PARENT_RESIDENT']}>
                 <DaycareDashboard />
               </ProtectedRoute>
             } />
@@ -158,12 +158,12 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/daycare/registrations" element={
-              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL', 'PARENT_RESIDENT']}>
                 <StudentRegistration />
               </ProtectedRoute>
             } />
             <Route path="/daycare/attendance" element={
-              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <AttendanceTracking />
               </ProtectedRoute>
             } />
@@ -173,7 +173,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/daycare/progress-reports" element={
-              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL', 'PARENT_RESIDENT']}>
                 <ProgressReports />
               </ProtectedRoute>
             } />
@@ -183,24 +183,24 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/daycare/materials" element={
-              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT']}>
+              <ProtectedRoute allowedRoles={['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL', 'PARENT_RESIDENT']}>
                 <LearningMaterials />
               </ProtectedRoute>
             } />
 
             {/* SK Engagement Module - Protected for SK roles */}
             <Route path="/sk" element={
-              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <SKDashboard />
               </ProtectedRoute>
             } />
             <Route path="/sk/events" element={
-              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <EventManagement />
               </ProtectedRoute>
             } />
             <Route path="/sk/events/:id" element={
-              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <EventDetails />
               </ProtectedRoute>
             } />
@@ -215,19 +215,19 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/sk/attendance" element={
-              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <AttendanceAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/sk/analytics" element={
-              <ProtectedRoute allowedRoles={['SK_CHAIRMAN', 'SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL']}>
                 <SKAnalytics />
               </ProtectedRoute>
             } />
 
             {/* Admin Module - Protected for Admin roles */}
             <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL']}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <AdminDashboard />
               </ProtectedRoute>
             } />
@@ -242,7 +242,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/admin/settings" element={
-              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
+              <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN']}>
                 <SystemSettings />
               </ProtectedRoute>
             } />

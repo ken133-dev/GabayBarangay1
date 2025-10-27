@@ -262,12 +262,26 @@ export default function UserManagement() {
         await api.put(`/admin/users/${selectedUser.id}/roles`, { roles: editFormData.roles });
       }
 
-      // Update other user details (this would need a new endpoint)
-      // For now, just show success
-      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...editFormData } : u));
+      // Update other user details
+      const userUpdateData = {
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        email: editFormData.email,
+        contactNumber: editFormData.contactNumber,
+        address: editFormData.address,
+        otpEnabled: editFormData.otpEnabled
+      };
+
+      await api.put(`/admin/users/${selectedUser.id}`, userUpdateData);
+
+      // Refetch the updated user data to ensure local state matches database
+      const response = await api.get(`/admin/users/${selectedUser.id}`);
+      const updatedUser = response.data.user;
+
+      setUsers(users.map(u => u.id === selectedUser.id ? updatedUser : u));
       setShowEditDialog(false);
       toast.success('User updated successfully');
-    } catch {
+    } catch (error) {
       toast.error('Failed to update user');
     }
   };

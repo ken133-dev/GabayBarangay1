@@ -29,23 +29,23 @@ const router = Router();
 
 // ========== REGISTRATION ROUTES ==========
 router.post('/registrations', authenticate, authorize('PARENT_RESIDENT', 'SYSTEM_ADMIN'), createDaycareRegistration);
-router.get('/registrations', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), getDaycareRegistrations);
+router.get('/registrations', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getDaycareRegistrations);
 router.get('/registrations/my', authenticate, authorize('PARENT_RESIDENT'), getMyRegistrations);
 router.patch('/registrations/:id/approve', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), approveRegistration);
 router.patch('/registrations/:id/reject', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), rejectRegistration);
 
 // ========== STUDENT ROUTES ==========
-router.get('/students', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), getDaycareStudents);
-router.get('/students/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT'), getStudentById);
+router.get('/students', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getDaycareStudents);
+router.get('/students/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT', 'BARANGAY_OFFICIAL'), getStudentById);
 
 // ========== ATTENDANCE ROUTES ==========
 router.post('/attendance', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), recordAttendance);
-router.get('/attendance', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), getAttendance);
+router.get('/attendance', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getAttendance);
 router.patch('/attendance/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), updateAttendance);
 
 // ========== PROGRESS REPORT ROUTES ==========
 router.post('/progress-reports', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), createProgressReport);
-router.get('/progress-reports', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), getProgressReports);
+router.get('/progress-reports', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getProgressReports);
 router.get('/progress-reports/my', authenticate, authorize('PARENT_RESIDENT'), getMyChildrenProgressReports);
 
 // ========== LEARNING MATERIAL ROUTES ==========

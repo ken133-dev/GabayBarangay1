@@ -113,7 +113,7 @@ export default function Dashboard() {
       description: 'System administration and user management',
       icon: Users,
       path: '/admin',
-      available: userRoles.some(role => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))
+      available: userRoles.some(role => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role))
     },
     // Reports
     {
