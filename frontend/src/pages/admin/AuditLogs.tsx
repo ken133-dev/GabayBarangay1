@@ -432,7 +432,7 @@ export default function AuditLogs() {
                             <div>
                               <div className="font-medium text-sm">{log.userName}</div>
                               <div className="text-xs text-muted-foreground">
-                                {log.userRole.replace('_', ' ')}
+                                {typeof log.userRole === 'string' ? log.userRole.replace('_', ' ') : ''}
                               </div>
                             </div>
                           </div>
@@ -453,7 +453,7 @@ export default function AuditLogs() {
                         <TableCell>
                           <Badge variant="outline" className={getSeverityBadge(log.severity)}>
                             {getSeverityIcon(log.severity)}
-                            <span className="ml-1">{log.severity.toUpperCase()}</span>
+                            <span className="ml-1">{typeof log.severity === 'string' ? log.severity.toUpperCase() : ''}</span>
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -477,7 +477,7 @@ export default function AuditLogs() {
 
       {/* Details Dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Audit Log Details</DialogTitle>
             <DialogDescription>
@@ -497,7 +497,7 @@ export default function AuditLogs() {
                 <div className="space-y-2">
                   <div className="text-sm font-medium">User</div>
                   <div className="text-sm text-muted-foreground">
-                    {selectedLog.userName} ({selectedLog.userRole.replace('_', ' ')})
+                    {selectedLog.userName} ({typeof selectedLog.userRole === 'string' ? selectedLog.userRole.replace('_', ' ') : ''})
                   </div>
                 </div>
 
@@ -512,7 +512,7 @@ export default function AuditLogs() {
                   <div className="text-sm font-medium">Severity</div>
                   <Badge variant="outline" className={getSeverityBadge(selectedLog.severity)}>
                     {getSeverityIcon(selectedLog.severity)}
-                    <span className="ml-1">{selectedLog.severity.toUpperCase()}</span>
+                    <span className="ml-1">{typeof selectedLog.severity === 'string' ? selectedLog.severity.toUpperCase() : ''}</span>
                   </Badge>
                 </div>
 
@@ -552,8 +552,8 @@ export default function AuditLogs() {
               {selectedLog.changes && (
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Changes</div>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-xs overflow-auto">
+                  <div className="bg-muted p-4 rounded-lg max-h-48 overflow-auto">
+                    <pre className="text-xs whitespace-pre-wrap break-all">
                       {JSON.stringify(selectedLog.changes, null, 2)}
                     </pre>
                   </div>

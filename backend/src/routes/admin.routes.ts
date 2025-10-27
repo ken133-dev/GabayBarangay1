@@ -1,3 +1,5 @@
+// ========== AUDIT LOGS ==========
+
 import { Router } from 'express';
 import {
   getAdminStats,
@@ -21,7 +23,12 @@ import {
   createRole,
   updateRole,
   deleteRole,
-  getPermissions
+  getPermissions,
+  createBackup,
+  getBackups,
+  downloadBackup,
+  getBroadcastMessages,
+  createBroadcastMessage
 } from '../controllers/admin.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -150,6 +157,45 @@ router.get('/permissions',
   authenticate, 
   authorize('SYSTEM_ADMIN'), 
   getPermissions
+);
+
+// ========== BACKUP MANAGEMENT ==========
+router.post('/backup', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  createBackup
+);
+
+router.get('/backups', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  getBackups
+);
+
+router.get('/backups/:id/download', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  downloadBackup
+);
+
+// ========== BROADCAST MESSAGES ==========
+router.get('/broadcast-messages', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  getBroadcastMessages
+);
+
+router.post('/broadcast-messages', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'), 
+  createBroadcastMessage
+);
+
+// ========== AUDIT LOGS ==========
+router.get('/audit-logs', 
+  authenticate, 
+  authorize('SYSTEM_ADMIN'), 
+  getAuditLogs
 );
 
 export default router;

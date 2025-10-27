@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -15,26 +15,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+// import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Settings,
   Save,
-  Database,
   FileText,
   Bell,
   Mail,
-  Shield,
-  Globe,
   RefreshCw,
-  CheckCircle,
   AlertCircle,
   Info,
-  Download,
-  Upload,
-  Clock
 } from 'lucide-react';
+// import { SystemBackup } from '@/types';
 import { api } from '@/lib/api';
 
 interface SystemConfig {
@@ -72,7 +66,8 @@ export default function SystemSettings() {
     sessionTimeout: 30,
     maxLoginAttempts: 5,
     passwordExpiryDays: 90,
-    backupFrequency: 'daily'
+    backupFrequency: 'daily',
+    lastBackupDate: undefined
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,6 +78,23 @@ export default function SystemSettings() {
   const userRoles = user.roles || [user.role || 'VISITOR'];
   const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/settings');
+      const settingsData = response.data.settings;
+      if (settingsData) {
+        setConfig(prevConfig => ({ ...prevConfig, ...settingsData }));
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      toast.error('Failed to load system settings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+
   useEffect(() => {
     if (!isAdmin) {
       toast.error('Access denied: Admin privileges required');
@@ -90,21 +102,8 @@ export default function SystemSettings() {
       return;
     }
 
-    fetchSettings();
-  }, [isAdmin, navigate]);
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/admin/settings');
-      setConfig(response.data.settings || config);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      toast.error('Failed to load system settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+  fetchSettings();
+  }, [isAdmin, navigate, fetchSettings]);
 
   const handleSaveSettings = async () => {
     try {
@@ -121,27 +120,6 @@ export default function SystemSettings() {
     }
   };
 
-  const handleBackupNow = async () => {
-    try {
-      toast.info('Backup started', {
-        description: 'Creating database backup...'
-      });
-      
-      const response = await api.post('/admin/backup');
-      
-      setConfig({
-        ...config,
-        lastBackupDate: new Date().toISOString()
-      });
-
-      toast.success('Backup completed', {
-        description: 'Database backup has been created successfully.'
-      });
-    } catch (error) {
-      console.error('Error creating backup:', error);
-      toast.error('Failed to create backup');
-    }
-  };
 
   const handleTestEmail = async () => {
     try {
@@ -169,21 +147,12 @@ export default function SystemSettings() {
     }
   };
 
-  const updateConfig = (key: keyof SystemConfig, value: any) => {
+
+  const updateConfig = (key: keyof SystemConfig, value: string | number | boolean) => {
     setConfig({ ...config, [key]: value });
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+
 
   if (loading) {
     return (
@@ -256,10 +225,6 @@ export default function SystemSettings() {
               <Shield className="mr-2 h-4 w-4" />
               Security
             </TabsTrigger> */}
-            <TabsTrigger value="backup">
-              <Database className="mr-2 h-4 w-4" />
-              Backup
-            </TabsTrigger>
             {/* <TabsTrigger value="system">
               <Globe className="mr-2 h-4 w-4" />
               System
@@ -551,96 +516,6 @@ export default function SystemSettings() {
             </Card>
           </TabsContent>
 
-          {/* Backup Settings */}
-          <TabsContent value="backup" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Backup</CardTitle>
-                <CardDescription>
-                  Configure automated database backup settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="backupFrequency">Backup Frequency</Label>
-                  <Select
-                    value={config.backupFrequency}
-                    onValueChange={(value) => updateConfig('backupFrequency', value)}
-                  >
-                    <SelectTrigger id="backupFrequency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Last Backup</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(config.lastBackupDate)}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
-                      <CheckCircle className="mr-1 h-3 w-3" />
-                      Successful
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Next Scheduled Backup</Label>
-                      <p className="text-sm text-muted-foreground">
-                        <Clock className="inline h-3 w-3 mr-1" />
-                        Based on {config.backupFrequency} schedule
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="flex gap-2">
-                  <Button onClick={handleBackupNow}>
-                    <Database className="mr-2 h-4 w-4" />
-                    Backup Now
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Backup
-                  </Button>
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Restore Backup
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Backup History</CardTitle>
-                <CardDescription>
-                  Recent database backup records
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Database className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground">No backup history available</p>
-                  <p className="text-sm text-muted-foreground mt-1">Backup history will appear here after creating backups</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* System Settings */}
           <TabsContent value="system" className="space-y-4">

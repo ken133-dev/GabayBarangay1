@@ -259,11 +259,15 @@ export const sendBroadcast = async (req: AuthRequest, res: Response) => {
     // Create broadcast message record
     const broadcast = await prisma.broadcastMessage.create({
       data: {
-        senderId,
         title,
         message,
         targetRoles: targetRoles || [],
-        scheduledFor: scheduledFor ? new Date(scheduledFor) : null
+        type: 'NOTIFICATION',
+        status: scheduledFor ? 'SCHEDULED' : 'SENT',
+        recipientCount: 0, // Will be calculated
+        deliveredCount: 0,
+        createdBy: senderId,
+        ...(scheduledFor ? { scheduledAt: new Date(scheduledFor) } : { sentAt: new Date() })
       }
     });
 

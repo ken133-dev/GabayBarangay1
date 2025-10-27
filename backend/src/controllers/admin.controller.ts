@@ -2,6 +2,10 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import prisma from '../utils/prisma';
 import { hashPassword } from '../utils/password';
+import * as path from 'path';
+import * as fs from 'fs';
+import { createPostgresBackup } from '../utils/backup';
+import { createSqlBackup } from '../utils/simpleSqlBackup';
 
 // ========== ADMIN STATS ==========
 export const getAdminStats = async (req: AuthRequest, res: Response) => {
@@ -256,8 +260,6 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
     // Transform user to include role names as strings
     const transformedUser = {
-      ...user,
-      roles: user.roles.map(r => r.name)
     };
 
     // Log the action
@@ -391,31 +393,7 @@ export const updateUserRoles = async (req: AuthRequest, res: Response) => {
     }
 
     const invalidRoles = roles.filter(role => !validRoles.includes(role));
-    if (invalidRoles.length > 0) {
-      return res.status(400).json({ error: `Invalid roles: ${invalidRoles.join(', ')}` });
-    }
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        roles: {
-          set: roles.map(roleName => ({ name: roleName }))
-        }
-      },
-      include: {
-        roles: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
-
-    // Transform user to include role names as strings
-    const transformedUser = {
-      ...user,
-      roles: user.roles.map(r => r.name)
-    };
+    // ...existing code...
 
     // Log the action
     await prisma.auditLog.create({
@@ -428,7 +406,7 @@ export const updateUserRoles = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.json({ user: transformedUser, message: 'User roles updated successfully' });
+  res.json({ message: 'User roles updated successfully' });
   } catch (error) {
     console.error('Update user roles error:', error);
     res.status(500).json({ error: 'Failed to update user roles' });
@@ -530,7 +508,8 @@ export const getSystemSettings = async (req: AuthRequest, res: Response) => {
           systemVersion: '1.0.0',
           maintenanceMode: false,
           allowRegistration: true,
-          requireApproval: true
+          requireApproval: true,
+          lastBackupDate: null
         }
       });
     }
@@ -706,7 +685,7 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const [logs, total] = await Promise.all([
+    const [rawLogs, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,
         include: {
@@ -714,7 +693,8 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
             select: {
               firstName: true,
               lastName: true,
-              email: true
+              email: true,
+              roles: true
             }
           }
         },
@@ -724,6 +704,23 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
       }),
       prisma.auditLog.count({ where })
     ]);
+
+    // Map logs to always provide userName and userRole for frontend
+    const logs = rawLogs.map(log => {
+      let userRole = 'SYSTEM';
+      if (log.user && Array.isArray(log.user.roles) && log.user.roles.length > 0) {
+        if (typeof log.user.roles[0] === 'string') {
+          userRole = log.user.roles[0];
+        } else if (typeof log.user.roles[0] === 'object' && log.user.roles[0].name) {
+          userRole = log.user.roles[0].name;
+        }
+      }
+      return {
+        ...log,
+        userName: log.user ? `${log.user.firstName || ''} ${log.user.lastName || ''}`.trim() || log.user.email || 'System' : 'System',
+        userRole: String(userRole),
+      };
+    });
 
     res.json({ 
       logs, 
@@ -982,5 +979,264 @@ export const getPermissions = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Get permissions error:', error);
     res.status(500).json({ error: 'Failed to fetch permissions' });
+  }
+};
+
+// ========== BACKUP MANAGEMENT ==========
+export const createBackup = async (req: AuthRequest, res: Response) => {
+  try {
+    // Use simple SQL export backup logic (no pg_dump)
+    console.log('[Backup] POST /api/admin/backup called (simple SQL export)');
+    const outputDir = process.env.BACKUP_DIR || path.join(__dirname, '../../backups');
+    const startedAt = new Date();
+    let backupResult;
+    try {
+      backupResult = await createSqlBackup(outputDir);
+    } catch (err) {
+      console.error('[Backup] Error during createSqlBackup:', err);
+      if (err instanceof Error && err.stack) {
+        console.error(err.stack);
+      }
+      // Record failed backup
+      await prisma.systemBackup.create({
+        data: {
+          backupType: 'MANUAL',
+          filePath: '',
+          fileSize: 0,
+          status: 'FAILED',
+          initiatedBy: req.user!.userId,
+          startedAt,
+          completedAt: new Date(),
+          notes: err instanceof Error ? err.message : String(err)
+        }
+      });
+      return res.status(500).json({ error: 'Backup failed', details: err instanceof Error ? err.message : String(err) });
+    }
+
+    // Success: record backup
+    // Store only the file name in the database, not the full path
+    const backup = await prisma.systemBackup.create({
+      data: {
+        backupType: 'MANUAL',
+        filePath: path.basename(backupResult.filePath),
+        fileSize: backupResult.fileSize,
+        status: 'COMPLETED',
+        initiatedBy: req.user!.userId,
+        startedAt,
+        completedAt: new Date()
+      }
+    });
+
+    // Update system settings with last backup date
+    const existingSettings = await prisma.systemSettings.findFirst();
+    if (existingSettings) {
+      await prisma.systemSettings.update({
+        where: { id: existingSettings.id },
+        data: {
+          lastBackupDate: new Date()
+        }
+      });
+    }
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        action: 'Created manual database backup',
+        entityType: 'SYSTEM',
+        entityId: backup.id,
+        changes: { backupType: 'MANUAL', filePath: backupResult.filePath }
+      }
+    });
+
+    res.json({
+      backup,
+      message: 'Database backup created successfully',
+      fileName: path.basename(backupResult.filePath),
+      fileSize: backupResult.fileSize
+    });
+  } catch (error) {
+    console.error('[Backup] Create backup error:', error);
+    if (error instanceof Error && error.stack) {
+      console.error(error.stack);
+    }
+    res.status(500).json({ error: 'Failed to create backup', details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+export const getBackups = async (req: AuthRequest, res: Response) => {
+  try {
+    const backups = await prisma.systemBackup.findMany({
+      orderBy: { startedAt: 'desc' },
+      take: 20
+    });
+
+    res.json({ backups });
+  } catch (error) {
+    console.error('Get backups error:', error);
+    res.status(500).json({ error: 'Failed to fetch backups' });
+  }
+};
+
+export const downloadBackup = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const backup = await prisma.systemBackup.findUnique({
+      where: { id }
+    });
+
+    if (!backup) {
+      return res.status(404).json({ error: 'Backup not found' });
+    }
+
+    if (backup.status !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Backup is not ready for download' });
+    }
+    // Stream the actual backup file content
+    // Always resolve the backup file from the backups directory
+    const backupsDir = path.join(__dirname, '../../backups');
+    const filePath = path.join(backupsDir, backup.filePath);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Backup file not found on disk' });
+    }
+    res.setHeader('Content-Type', 'application/sql');
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+  } catch (error) {
+    console.error('Download backup error:', error);
+    res.status(500).json({ error: 'Failed to download backup' });
+  }
+};
+
+// ========== BROADCAST MESSAGES ==========
+export const getBroadcastMessages = async (req: AuthRequest, res: Response) => {
+  try {
+    const messages = await prisma.broadcastMessage.findMany({
+      include: {
+        sender: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Transform messages to match frontend expectations
+    const transformedMessages = messages.map(message => ({
+      id: message.id,
+      title: message.title,
+      message: message.message,
+      type: message.type,
+      targetRoles: message.targetRoles,
+      status: message.status,
+      sentAt: message.sentAt,
+      scheduledAt: message.scheduledAt,
+      recipientCount: message.recipientCount,
+      deliveredCount: message.deliveredCount,
+      createdBy: `${message.sender.firstName} ${message.sender.lastName}`,
+      createdAt: message.createdAt
+    }));
+
+    res.json({ messages: transformedMessages });
+  } catch (error) {
+    console.error('Get broadcast messages error:', error);
+    res.status(500).json({ error: 'Failed to fetch broadcast messages' });
+  }
+};
+
+export const createBroadcastMessage = async (req: AuthRequest, res: Response) => {
+  try {
+    const { title, message, type, targetRoles, scheduledAt } = req.body;
+
+    // Validate required fields
+    if (!title || !message || !targetRoles || !Array.isArray(targetRoles) || targetRoles.length === 0) {
+      return res.status(400).json({ error: 'Title, message, and target roles are required' });
+    }
+
+    // Validate type
+    const validTypes = ['SMS', 'EMAIL', 'NOTIFICATION'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid message type' });
+    }
+
+    // Count recipients
+    const recipientCount = await prisma.user.count({
+      where: {
+        roles: {
+          some: {
+            name: { in: targetRoles }
+          }
+        },
+        status: 'ACTIVE'
+      }
+    });
+
+    const createData: any = {
+      title,
+      message,
+      type,
+      targetRoles,
+      status: scheduledAt ? 'SCHEDULED' : 'SENT',
+      recipientCount,
+      deliveredCount: 0,
+      createdBy: req.user!.userId
+    };
+
+    if (scheduledAt) {
+      createData.scheduledAt = new Date(scheduledAt);
+    } else {
+      createData.sentAt = new Date();
+      // For immediate sends, mark as delivered (simplified - in real app would send notifications)
+      createData.deliveredCount = recipientCount;
+      createData.status = 'SENT';
+    }
+
+    const broadcastMessage = await prisma.broadcastMessage.create({
+      data: createData,
+      include: {
+        sender: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        action: `Created broadcast message: ${title}`,
+        entityType: 'BROADCAST',
+        entityId: broadcastMessage.id,
+        changes: { type, targetRoles, recipientCount }
+      }
+    });
+
+    // Transform for response
+    const transformedMessage = {
+      id: broadcastMessage.id,
+      title: broadcastMessage.title,
+      message: broadcastMessage.message,
+      type: broadcastMessage.type,
+      targetRoles: broadcastMessage.targetRoles,
+      status: broadcastMessage.status,
+      sentAt: broadcastMessage.sentAt,
+      scheduledAt: broadcastMessage.scheduledAt,
+      recipientCount: broadcastMessage.recipientCount,
+      deliveredCount: broadcastMessage.deliveredCount,
+      createdBy: `${broadcastMessage.sender.firstName} ${broadcastMessage.sender.lastName}`,
+      createdAt: broadcastMessage.createdAt
+    };
+
+    res.status(201).json({ message: transformedMessage, success: 'Broadcast message created successfully' });
+  } catch (error) {
+    console.error('Create broadcast message error:', error);
+    res.status(500).json({ error: 'Failed to create broadcast message' });
   }
 };

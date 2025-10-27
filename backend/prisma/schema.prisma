@@ -475,14 +475,22 @@ model NotificationSettings {
 }
 
 model BroadcastMessage {
-  id          String   @id @default(cuid())
-  senderId    String
-  sender      User     @relation(fields: [senderId], references: [id])
-  title       String
-  message     String
-  targetRoles String[] // Array of roles to send to
-  sentAt      DateTime @default(now())
-  scheduledFor DateTime?
+  id            String   @id @default(cuid())
+  title         String
+  message       String
+  type          String   @default("NOTIFICATION") // SMS, EMAIL, NOTIFICATION
+  targetRoles   String[] // Array of roles to send to
+  status        String   @default("DRAFT") // DRAFT, SENT, SCHEDULED, FAILED
+  recipientCount Int     @default(0)
+  deliveredCount Int     @default(0)
+  sentAt        DateTime?
+  scheduledAt   DateTime?
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  sender        User     @relation(fields: [createdBy], references: [id])
 
   @@map("broadcast_messages")
 }

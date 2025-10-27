@@ -105,3 +105,16 @@ export interface DaycareRegistration {
   status: string;
   submittedAt: string;
 }
+
+// System Types
+export interface SystemBackup {
+  id: string;
+  backupType: 'MANUAL' | 'SCHEDULED';
+  filePath: string;
+  fileSize: number;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  startedAt: string;
+  completedAt?: string;
+  initiatedBy: string;
+  errorMessage?: string;
+}
