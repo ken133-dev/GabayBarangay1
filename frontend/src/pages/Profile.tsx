@@ -34,12 +34,10 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const user = localStorage.getItem('user');
-        if (!user) {
-          navigate('/login');
-          return;
-        }
-        const profileData = JSON.parse(user);
+        // Fetch fresh profile data from backend instead of localStorage
+        const response = await api.get('/auth/profile');
+        const profileData = response.data.user;
+        
         setProfile(profileData);
         setFormData({
           firstName: profileData.firstName,
@@ -47,7 +45,11 @@ export default function Profile() {
           email: profileData.email,
           otpEnabled: profileData.otpEnabled || false
         });
-      } catch {
+        
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(profileData));
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
         toast.error('Failed to load profile');
         navigate('/login');
       } finally {
@@ -58,14 +60,23 @@ export default function Profile() {
   }, [navigate]);
 
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     try {
       const response = await api.put('/auth/profile', formData);
+      const updatedUser = response.data.user;
 
-      setProfile(response.data.user);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setProfile(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
       toast.success('Profile updated successfully!');
+      
+      // Update form data to reflect backend response
+      setFormData({
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        otpEnabled: updatedUser.otpEnabled || false
+      });
     } catch (error) {
       console.error('Update profile error:', error);
       toast.error('Failed to update profile');
@@ -242,14 +253,42 @@ export default function Profile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">SMS OTP</p>
-                <p className="text-sm text-muted-foreground">Receive OTP via SMS for login</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive OTP via SMS for login (Gabay Barangay)
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Status: {formData.otpEnabled ? 
+                    <span className="text-green-600 font-medium">Enabled</span> : 
+                    <span className="text-gray-500">Disabled</span>
+                  }
+                </p>
               </div>
-              <Switch
-                checked={formData.otpEnabled}
-                onCheckedChange={(checked) => setFormData({ ...formData, otpEnabled: checked })}
-              />
+              <div className="flex flex-col items-end gap-2">
+                <Switch
+                  checked={formData.otpEnabled}
+                  onCheckedChange={async (checked) => {
+                    const newFormData = { ...formData, otpEnabled: checked };
+                    setFormData(newFormData);
+                    
+                    // Auto-save when toggle changes
+                    try {
+                      const response = await api.put('/auth/profile', newFormData);
+                      const updatedUser = response.data.user;
+                      setProfile(updatedUser);
+                      localStorage.setItem('user', JSON.stringify(updatedUser));
+                      toast.success(checked ? 'OTP enabled successfully!' : 'OTP disabled successfully!');
+                    } catch (error) {
+                      // Revert on error
+                      setFormData(formData);
+                      toast.error('Failed to update OTP setting');
+                    }
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {formData.otpEnabled ? 'ON' : 'OFF'}
+                </span>
+              </div>
             </div>
-            <Button onClick={handleUpdateProfile} className="mt-4">Save Changes</Button>
           </CardContent>
         </Card>
 

@@ -1,22 +1,20 @@
-import twilio from 'twilio';
+const telerivetApiKey = process.env.TELERIVET_API_KEY;
+const telerivetProjectId = process.env.TELERIVET_PROJECT_ID;
+const telerivetApiUrl = 'https://api.telerivet.com/v1';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-
-if (!accountSid || !authToken || !verifyServiceSid) {
-  throw new Error('Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID');
+if (!telerivetApiKey || !telerivetProjectId) {
+  throw new Error('Telerivet credentials not configured. Please set TELERIVET_API_KEY and TELERIVET_PROJECT_ID');
 }
 
-const client = twilio(accountSid, authToken);
-
-// Store verification attempts to prevent abuse (in production, use Redis or database)
+// Store verification attempts and OTP codes (in production, use Redis or database)
 const verificationAttempts = new Map<string, { attempts: number; lastAttempt: Date; blockedUntil?: Date }>();
+const otpStorage = new Map<string, { code: string; expiresAt: Date }>();
 
 // Rate limiting: max 3 attempts per phone number per hour
 const MAX_ATTEMPTS = 3;
 const BLOCK_DURATION = 60 * 60 * 1000; // 1 hour
 const CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const OTP_EXPIRY = 15 * 60 * 1000; // 15 minutes (extended for Telerivet free plan)
 
 export const formatPhoneNumber = (phoneNumber: string): string => {
   // Remove all non-digit characters
@@ -82,6 +80,10 @@ export const recordAttempt = (phoneNumber: string): void => {
   verificationAttempts.set(phoneNumber, attempts);
 };
 
+const generateOTP = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 export const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Validate phone number
@@ -100,14 +102,41 @@ export const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; 
       };
     }
 
-    // Send verification code using Twilio Verify
-    await client.verify.v2.services(verifyServiceSid)
-      .verifications
-      .create({
-        to: formattedNumber,
-        channel: 'sms',
-        locale: 'en'
-      });
+    // Generate OTP code
+    const otpCode = generateOTP();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY);
+
+    // Store OTP
+    otpStorage.set(formattedNumber, { code: otpCode, expiresAt });
+
+    // Send SMS using Telerivet API
+    const response = await fetch(`${telerivetApiUrl}/projects/${telerivetProjectId}/messages/send`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(telerivetApiKey + ':').toString('base64')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to_number: formattedNumber,
+        content: `Your Gabay Barangay verification code is: ${otpCode}. This code will expire in 15 minutes. SMS may take 2-5 minutes to arrive.`
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({})) as any;
+      console.error('EngageSpark API error:', response.status, errorData);
+      
+      // Handle Telerivet error codes
+      if (response.status === 401) {
+        return { success: false, error: 'Invalid API key' };
+      } else if (response.status === 403) {
+        return { success: false, error: 'Access denied' };
+      } else if (response.status === 404) {
+        return { success: false, error: 'Project not found' };
+      } else {
+        return { success: false, error: errorData?.error || 'Failed to send verification code. Please try again.' };
+      }
+    }
 
     // Record the attempt
     recordAttempt(formattedNumber);
@@ -116,15 +145,6 @@ export const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; 
 
   } catch (error: any) {
     console.error('Error sending OTP:', error);
-
-    if (error.code === 60200) {
-      return { success: false, error: 'Invalid phone number' };
-    } else if (error.code === 60203) {
-      return { success: false, error: 'Phone number is not reachable' };
-    } else if (error.code === 60212) {
-      return { success: false, error: 'Too many requests to this phone number' };
-    }
-
     return { success: false, error: 'Failed to send verification code. Please try again.' };
   }
 };
@@ -142,19 +162,25 @@ export const verifyOTP = async (phoneNumber: string, code: string): Promise<{ su
       };
     }
 
-    // Verify the code using Twilio Verify
-    const verification = await client.verify.v2.services(verifyServiceSid)
-      .verificationChecks
-      .create({
-        to: formattedNumber,
-        code: code
-      });
+    // Get stored OTP
+    const storedOtp = otpStorage.get(formattedNumber);
+    if (!storedOtp) {
+      return { success: false, error: 'No verification code found. Please request a new code.' };
+    }
+
+    // Check if OTP has expired
+    if (new Date() > storedOtp.expiresAt) {
+      otpStorage.delete(formattedNumber);
+      return { success: false, error: 'Verification code has expired. Please request a new code.' };
+    }
 
     // Record the attempt
     recordAttempt(formattedNumber);
 
-    if (verification.status === 'approved') {
-      // Clear attempts on successful verification
+    // Verify the code
+    if (storedOtp.code === code) {
+      // Clear stored OTP and attempts on successful verification
+      otpStorage.delete(formattedNumber);
       verificationAttempts.delete(formattedNumber);
       return { success: true };
     } else {
@@ -163,23 +189,25 @@ export const verifyOTP = async (phoneNumber: string, code: string): Promise<{ su
 
   } catch (error: any) {
     console.error('Error verifying OTP:', error);
-
-    if (error.code === 60202) {
-      return { success: false, error: 'Verification code has expired' };
-    } else if (error.code === 60201) {
-      return { success: false, error: 'Invalid verification code' };
-    }
-
     return { success: false, error: 'Failed to verify code. Please try again.' };
   }
 };
 
 export const cleanupExpiredAttempts = (): void => {
   const now = new Date();
+  
+  // Clean up expired verification attempts
   for (const [phoneNumber, attempts] of verificationAttempts.entries()) {
     // Remove entries older than 24 hours
     if (now.getTime() - attempts.lastAttempt.getTime() > 24 * 60 * 60 * 1000) {
       verificationAttempts.delete(phoneNumber);
+    }
+  }
+  
+  // Clean up expired OTP codes
+  for (const [phoneNumber, otp] of otpStorage.entries()) {
+    if (now > otp.expiresAt) {
+      otpStorage.delete(phoneNumber);
     }
   }
 };

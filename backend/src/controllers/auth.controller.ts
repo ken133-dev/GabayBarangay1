@@ -252,7 +252,7 @@ export const sendLoginOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No contact number found. Please update your profile.' });
     }
 
-    // Send OTP using Twilio Verify
+    // Send OTP using Telerivet with user's actual phone number
     const otpResult = await sendOTP(user.contactNumber);
 
     if (!otpResult.success) {
@@ -260,12 +260,52 @@ export const sendLoginOTP = async (req: Request, res: Response) => {
     }
 
     res.json({
-      message: 'OTP sent successfully',
-      requiresOTP: true
+      message: 'OTP sent successfully. SMS may take 2-5 minutes to arrive.',
+      requiresOTP: true,
+      phoneNumber: user.contactNumber.replace(/\d(?=\d{4})/g, '*'), // Mask phone number for security
+      estimatedDelivery: '2-5 minutes',
+      expiryTime: '15 minutes'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Send OTP error:', error);
+    if (error.code === 'P1001') {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
     res.status(500).json({ error: 'Failed to send OTP' });
+  }
+};
+
+export const resendOTP = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user || !user.contactNumber) {
+      return res.status(404).json({ error: 'User not found or no contact number' });
+    }
+
+    // Send new OTP
+    const otpResult = await sendOTP(user.contactNumber);
+
+    if (!otpResult.success) {
+      return res.status(400).json({ error: otpResult.error });
+    }
+
+    res.json({
+      message: 'New OTP sent successfully. SMS may take 2-5 minutes to arrive.',
+      estimatedDelivery: '2-5 minutes'
+    });
+  } catch (error: any) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ error: 'Failed to resend OTP' });
   }
 };
 
@@ -294,7 +334,7 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Verify OTP using Twilio Verify
+    // Verify OTP using user's actual phone number from database
     const verifyResult = await verifyOTP(user.contactNumber!, otp);
 
     if (!verifyResult.success) {
@@ -323,8 +363,11 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
         status: user.status
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Verify OTP error:', error);
+    if (error.code === 'P1001') {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
     res.status(500).json({ error: 'OTP verification failed' });
   }
 };
