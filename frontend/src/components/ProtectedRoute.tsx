@@ -46,23 +46,7 @@ export default function ProtectedRoute({
     );
   }
 
-  // Check role-based access
-  const userRoles = user.roles || (user.role ? [user.role] : ['VISITOR']);
-  if (allowedRoles && !userRoles.some(role => allowedRoles.includes(role))) {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-bold">Access Denied</h1>
-          <p className="text-muted-foreground">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Your current roles: <strong>{userRoles.join(', ')}</strong>
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Role-based access control removed - all authenticated users can access any route
 
   return <>{children}</>;
 }

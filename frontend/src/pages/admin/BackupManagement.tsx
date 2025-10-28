@@ -28,10 +28,6 @@ export default function BackupManagement() {
   const [backupFrequency] = useState('daily');
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
-
   const fetchBackups = useCallback(async () => {
     try {
       setLoading(true);
@@ -46,13 +42,8 @@ export default function BackupManagement() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
     fetchBackups();
-  }, [isAdmin, navigate, fetchBackups]);
+  }, [fetchBackups]);
 
   const handleCreateBackup = async () => {
     setCreating(true);

@@ -110,20 +110,10 @@ export default function RoleManagement() {
   });
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN'].includes(role));
-
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: System Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
-
     fetchRoles();
     fetchPermissions();
-  }, [isAdmin, navigate]);
+  }, []);
 
   useEffect(() => {
     const filterRoles = () => {

@@ -51,11 +51,12 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
     isActive: true,
   });
 
-  // Admin Access (System Admin & Barangay Captain) - check both roles array and single role
+  // Admin Access (System Admin, Barangay Captain & Barangay Official) - check both roles array and single role
   const isSystemAdmin = hasRole('SYSTEM_ADMIN');
   const isBarangayCaptain = hasRole('BARANGAY_CAPTAIN');
-  const isAdmin = isSystemAdmin || isBarangayCaptain;
-  const isSingleRoleAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('BARANGAY_CAPTAIN');
+  const isBarangayOfficial = hasRole('BARANGAY_OFFICIAL');
+  const isAdmin = isSystemAdmin || isBarangayCaptain || isBarangayOfficial;
+  const isSingleRoleAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('BARANGAY_CAPTAIN') || userRoles.includes('BARANGAY_OFFICIAL');
   
   if (isAdmin || isSingleRoleAdmin) {
     navigation.main.push(

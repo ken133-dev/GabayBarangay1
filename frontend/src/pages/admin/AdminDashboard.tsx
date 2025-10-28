@@ -65,18 +65,10 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
 
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
-
     fetchDashboardStats();
-  }, [isAdmin, navigate]);
+  }, []);
 
   const fetchDashboardStats = async () => {
     try {

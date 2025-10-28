@@ -67,19 +67,9 @@ export default function PendingApprovals() {
   const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
-
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
-
     fetchPendingUsers();
-  }, [isAdmin, navigate]);
+  }, []);
 
   useEffect(() => {
     filterUsers();

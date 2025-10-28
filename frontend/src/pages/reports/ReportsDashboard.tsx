@@ -335,15 +335,9 @@ export default function ReportsDashboard() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            {(user.role === 'SYSTEM_ADMIN' || user.role === 'BARANGAY_CAPTAIN' || user.role === 'BARANGAY_OFFICIAL' || user.role === 'BHW' || user.role === 'BHW_COORDINATOR') && (
-              <TabsTrigger value="health">Health Services</TabsTrigger>
-            )}
-            {(user.role === 'SYSTEM_ADMIN' || user.role === 'BARANGAY_CAPTAIN' || user.role === 'BARANGAY_OFFICIAL' || user.role === 'DAYCARE_STAFF' || user.role === 'DAYCARE_TEACHER') && (
-              <TabsTrigger value="daycare">Daycare</TabsTrigger>
-            )}
-            {(user.role === 'SYSTEM_ADMIN' || user.role === 'BARANGAY_CAPTAIN' || user.role === 'BARANGAY_OFFICIAL' || user.role === 'SK_OFFICER' || user.role === 'SK_CHAIRMAN') && (
-              <TabsTrigger value="sk">SK Engagement</TabsTrigger>
-            )}
+            <TabsTrigger value="health">Health Services</TabsTrigger>
+            <TabsTrigger value="daycare">Daycare</TabsTrigger>
+            <TabsTrigger value="sk">SK Engagement</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
