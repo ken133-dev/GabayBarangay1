@@ -47,6 +47,14 @@ export default function Register() {
       return;
     }
 
+    // Validate Philippine phone number format
+    if (!formData.contactNumber.match(/^09[0-9]{9}$/)) {
+      toast.error('Invalid phone number format', {
+        description: 'Please enter a valid Philippine mobile number starting with 09 (11 digits total)'
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await registerUser({
@@ -251,12 +259,38 @@ export default function Register() {
                   <Input
                     id="contactNumber"
                     type="tel"
-                    placeholder="+63 9XX XXX XXXX"
-                    onChange={handleChange}
+                    placeholder="09XX XXX XXXX"
+                    value={formData.contactNumber}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                      
+                      // Ensure it starts with 09
+                      if (value.length > 0 && !value.startsWith('09')) {
+                        if (value.startsWith('9')) {
+                          value = '0' + value;
+                        } else if (value.startsWith('63')) {
+                          value = '0' + value.substring(2);
+                        } else {
+                          value = '09' + value;
+                        }
+                      }
+                      
+                      // Limit to 11 digits (09XXXXXXXXX)
+                      if (value.length > 11) {
+                        value = value.substring(0, 11);
+                      }
+                      
+                      setFormData({ ...formData, contactNumber: value });
+                    }}
                     className="pl-10"
+                    pattern="09[0-9]{9}"
+                    maxLength={11}
                     required
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Enter Philippine mobile number starting with 09 (e.g., 09123456789)
+                </p>
               </div>
 
               <div className="space-y-2">
