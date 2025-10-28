@@ -12,6 +12,7 @@ import {
 import {
   Heart, Calendar, Activity, Users, TrendingUp, Download, ArrowLeft
 } from 'lucide-react';
+import { exportHealthReportToPDF, exportHealthReportToExcel } from '@/lib/exportUtils';
 
 interface HealthReport {
   summary: {
@@ -67,8 +68,24 @@ export default function HealthReports() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting health report to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!report) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting health report:', report); // Debug log
+      if (format === 'pdf') {
+        exportHealthReportToPDF(report);
+        toast.success('Health report exported to PDF successfully!');
+      } else {
+        exportHealthReportToExcel(report);
+        toast.success('Health report exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {

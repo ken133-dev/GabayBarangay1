@@ -620,6 +620,91 @@ export const deleteLearningMaterial = async (req: AuthRequest, res: Response) =>
   }
 };
 
+// ========== REGISTRATION UPDATES ==========
+
+export const updateDaycareRegistration = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Convert date if provided
+    if (updateData.childDateOfBirth) {
+      updateData.childDateOfBirth = new Date(updateData.childDateOfBirth);
+    }
+
+    const registration = await prisma.daycareRegistration.update({
+      where: { id },
+      data: updateData,
+      include: {
+        parent: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      message: 'Registration updated successfully',
+      registration
+    });
+  } catch (error) {
+    console.error('Update registration error:', error);
+    res.status(500).json({ error: 'Failed to update registration' });
+  }
+};
+
+export const deleteDaycareRegistration = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if registration exists
+    const registration = await prisma.daycareRegistration.findUnique({
+      where: { id },
+      include: {
+        student: true
+      }
+    });
+
+    if (!registration) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+
+    // If there's an associated student, delete related records first
+    if (registration.student) {
+      const studentId = registration.student.id;
+      
+      // Delete attendance records first
+      await prisma.attendanceRecord.deleteMany({
+        where: { studentId }
+      });
+      
+      // Delete progress reports
+      await prisma.progressReport.deleteMany({
+        where: { studentId }
+      });
+      
+      // Now delete the student
+      await prisma.daycareStudent.delete({
+        where: { id: studentId }
+      });
+    }
+
+    // Delete the registration
+    await prisma.daycareRegistration.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Registration deleted successfully' });
+  } catch (error) {
+    console.error('Delete registration error:', error);
+    res.status(500).json({ error: 'Failed to delete registration' });
+  }
+};
+
 export const downloadLearningMaterial = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;

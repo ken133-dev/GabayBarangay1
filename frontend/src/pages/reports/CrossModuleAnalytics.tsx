@@ -13,6 +13,7 @@ import {
 import {
   TrendingUp, Users, Activity, Calendar, Download, ArrowLeft, BarChart3
 } from 'lucide-react';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 
 interface CrossModuleAnalytics {
   overview: {
@@ -63,8 +64,74 @@ export default function CrossModuleAnalytics() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting cross-module analytics to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!analytics) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting analytics:', analytics); // Debug log
+      const exportData = [
+        {
+          metric: 'Total Users',
+          value: analytics.overview?.totalUsers || 0,
+          category: 'Overview'
+        },
+        {
+          metric: 'Active Services',
+          value: analytics.overview?.activeServices || 0,
+          category: 'Overview'
+        },
+        {
+          metric: 'Total Engagement',
+          value: analytics.overview?.totalEngagement || 0,
+          category: 'Overview'
+        },
+        {
+          metric: 'System Utilization (%)',
+          value: analytics.overview?.systemUtilization || 0,
+          category: 'Overview'
+        },
+        {
+          metric: 'Health Service Users',
+          value: analytics.serviceUsage?.health?.users || 0,
+          category: 'Service Usage'
+        },
+        {
+          metric: 'Daycare Service Users',
+          value: analytics.serviceUsage?.daycare?.users || 0,
+          category: 'Service Usage'
+        },
+        {
+          metric: 'SK Service Users',
+          value: analytics.serviceUsage?.sk?.users || 0,
+          category: 'Service Usage'
+        },
+        {
+          metric: 'Multi-Service Users',
+          value: analytics.crossService?.multiServiceUsers || 0,
+          category: 'Cross-Service'
+        },
+        {
+          metric: 'Engagement Score',
+          value: analytics.crossService?.engagementScore || 0,
+          category: 'Cross-Service'
+        }
+      ];
+
+      const columns = ['Metric', 'Value', 'Category'];
+
+      if (format === 'pdf') {
+        exportToPDF(exportData, 'Cross-Module Analytics - Gabay Barangay', columns);
+        toast.success('Analytics exported to PDF successfully!');
+      } else {
+        exportToExcel(exportData, 'Cross-Module Analytics');
+        toast.success('Analytics exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {

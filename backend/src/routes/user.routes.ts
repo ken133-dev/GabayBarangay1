@@ -4,7 +4,7 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/', authenticate, authorize('SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'), getAllUsers);
-router.patch('/:userId/status', authenticate, authorize('SYSTEM_ADMIN'), updateUserStatus);
+router.get('/', authenticate, getAllUsers);
+router.patch('/:userId/status', authenticate, updateUserStatus);
 
 export default router;

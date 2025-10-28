@@ -15,6 +15,7 @@ import {
   Activity, Users, Calendar, Baby, Heart, TrendingUp,
   Download, RefreshCw, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 
 interface DashboardStats {
   summary?: {
@@ -174,8 +175,83 @@ export default function ReportsDashboard() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!stats) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      const exportData = [
+        {
+          metric: 'Total Users',
+          value: stats.summary?.totalUsers || 0,
+          category: 'Overview'
+        },
+        {
+          metric: 'Total Patients',
+          value: stats.summary?.totalPatients || 0,
+          category: 'Health Services'
+        },
+        {
+          metric: 'Total Appointments',
+          value: stats.summary?.totalAppointments || 0,
+          category: 'Health Services'
+        },
+        {
+          metric: 'Total Students',
+          value: stats.summary?.totalStudents || 0,
+          category: 'Daycare Services'
+        },
+        {
+          metric: 'Total Events',
+          value: stats.summary?.totalEvents || 0,
+          category: 'SK Engagement'
+        },
+        {
+          metric: 'Completed Appointments',
+          value: stats.healthServices?.completedAppointments || 0,
+          category: 'Health Services'
+        },
+        {
+          metric: 'Total Vaccinations',
+          value: stats.healthServices?.totalVaccinations || 0,
+          category: 'Health Services'
+        },
+        {
+          metric: 'Approved Registrations',
+          value: stats.daycareServices?.approvedRegistrations || 0,
+          category: 'Daycare Services'
+        },
+        {
+          metric: 'Average Attendance Rate (%)',
+          value: (stats.daycareServices?.averageAttendanceRate || 0).toFixed(1),
+          category: 'Daycare Services'
+        },
+        {
+          metric: 'Published Events',
+          value: stats.skEngagement?.publishedEvents || 0,
+          category: 'SK Engagement'
+        },
+        {
+          metric: 'Event Attendance Rate (%)',
+          value: (stats.skEngagement?.averageAttendanceRate || 0).toFixed(1),
+          category: 'SK Engagement'
+        }
+      ];
+
+      const columns = ['Metric', 'Value', 'Category'];
+
+      if (format === 'pdf') {
+        exportToPDF(exportData, 'Gabay Barangay - Dashboard Report', columns);
+        toast.success('Dashboard report exported to PDF successfully!');
+      } else {
+        exportToExcel(exportData, 'Dashboard Report');
+        toast.success('Dashboard report exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}`);
+    }
   };
 
   if (loading) {

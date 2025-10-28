@@ -7,7 +7,21 @@ import prisma from '../utils/prisma';
 export const createEvent = async (req: AuthRequest, res: Response) => {
   try {
     const createdBy = req.user!.userId;
-    const { eventDate, startTime, endTime, ...eventData } = req.body;
+    const { title, description, eventDate, startTime, endTime, location, category, maxParticipants, status } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !eventDate || !startTime || !location) {
+      return res.status(400).json({ error: 'Missing required fields: title, description, eventDate, startTime, location' });
+    }
+
+    // Validate date is not in the past
+    const selectedDate = new Date(eventDate + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      return res.status(400).json({ error: 'Event date cannot be in the past' });
+    }
 
     // Combine date and time properly
     const eventDateTime = new Date(eventDate);
@@ -20,20 +34,30 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       const [endHour, endMinute] = endTime.split(':');
       endDateTime = new Date(eventDateTime);
       endDateTime.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
+      
+      // Validate end time is after start time
+      if (endDateTime <= startDateTime) {
+        return res.status(400).json({ error: 'End time must be after start time' });
+      }
     }
 
     const event = await prisma.event.create({
       data: {
-        ...eventData,
+        title,
+        description,
         eventDate: eventDateTime,
         startTime: startDateTime,
         endTime: endDateTime,
+        location,
+        category: category || null,
+        maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
         createdBy,
-        status: eventData.status || 'DRAFT',
-        publishedAt: eventData.status === 'PUBLISHED' ? new Date() : null
+        status: status || 'DRAFT',
+        publishedAt: status === 'PUBLISHED' ? new Date() : null
       }
     });
 
+    console.log('Event created successfully:', event);
     res.status(201).json({ message: 'Event created successfully', event });
   } catch (error) {
     console.error('Create event error:', error);
@@ -45,15 +69,22 @@ export const getAllEvents = async (req: AuthRequest, res: Response) => {
   try {
     const { status, category } = req.query;
     const userRoles = req.user?.roles || [];
-    const userRole = userRoles[0] || 'VISITOR';
+    
+    // Check if user has SK or Admin roles
+    const hasSkOrAdminRole = userRoles.some((role: any) => {
+      const roleName = typeof role === 'string' ? role : role.name;
+      return ['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(roleName);
+    });
+
+    console.log('User roles:', userRoles, 'Has SK/Admin role:', hasSkOrAdminRole);
 
     // SK Officers and Admin can see all events, others only see published
     const where: any = {};
 
     if (status) {
       where.status = status;
-    } else if (!['SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'].includes(userRole || '')) {
-      where.status = { in: ['PUBLISHED', 'ONGOING', 'COMPLETED'] };
+    } else if (!hasSkOrAdminRole) {
+      where.status = { in: ['PUBLISHED', 'COMPLETED', 'CANCELLED'] };
     }
 
     if (category) {
@@ -70,9 +101,10 @@ export const getAllEvents = async (req: AuthRequest, res: Response) => {
           }
         }
       },
-      orderBy: { eventDate: 'desc' }
+      orderBy: { createdAt: 'desc' }
     });
 
+    console.log('Found events:', events.length);
     res.json({ events });
   } catch (error) {
     console.error('Get events error:', error);
@@ -85,15 +117,12 @@ export const getPublicEvents = async (req: AuthRequest, res: Response) => {
     const { category, upcoming } = req.query;
 
     const where: any = {
-      status: 'PUBLISHED'
+      status: 'PUBLISHED',
+      eventDate: { gte: new Date() }
     };
 
     if (category) {
       where.category = category;
-    }
-
-    if (upcoming === 'true') {
-      where.eventDate = { gte: new Date() };
     }
 
     const events = await prisma.event.findMany({

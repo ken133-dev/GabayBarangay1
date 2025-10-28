@@ -25,7 +25,10 @@ import {
   getLearningMaterials,
   updateLearningMaterial,
   deleteLearningMaterial,
-  downloadLearningMaterial
+  downloadLearningMaterial,
+  // Registration Updates
+  updateDaycareRegistration,
+  deleteDaycareRegistration
 } from '../controllers/daycare.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -75,31 +78,33 @@ const learningMaterialUpload = multer({
 });
 
 // ========== REGISTRATION ROUTES ==========
-router.post('/registrations', authenticate, authorize('PARENT_RESIDENT', 'SYSTEM_ADMIN'), createDaycareRegistration);
-router.get('/registrations', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getDaycareRegistrations);
-router.get('/registrations/my', authenticate, authorize('PARENT_RESIDENT'), getMyRegistrations);
-router.patch('/registrations/:id/approve', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), approveRegistration);
-router.patch('/registrations/:id/reject', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), rejectRegistration);
+router.post('/registrations', authenticate, createDaycareRegistration);
+router.get('/registrations', authenticate, getDaycareRegistrations);
+router.get('/registrations/my', authenticate, getMyRegistrations);
+router.patch('/registrations/:id/approve', authenticate, approveRegistration);
+router.patch('/registrations/:id/reject', authenticate, rejectRegistration);
+router.patch('/registrations/:id', authenticate, updateDaycareRegistration);
+router.delete('/registrations/:id', authenticate, deleteDaycareRegistration);
 
 // ========== STUDENT ROUTES ==========
-router.get('/students', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getDaycareStudents);
-router.get('/students/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'PARENT_RESIDENT', 'BARANGAY_OFFICIAL'), getStudentById);
+router.get('/students', authenticate, getDaycareStudents);
+router.get('/students/:id', authenticate, getStudentById);
 
 // ========== ATTENDANCE ROUTES ==========
-router.post('/attendance', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), recordAttendance);
-router.get('/attendance', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getAttendance);
-router.patch('/attendance/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), updateAttendance);
+router.post('/attendance', authenticate, recordAttendance);
+router.get('/attendance', authenticate, getAttendance);
+router.patch('/attendance/:id', authenticate, updateAttendance);
 
 // ========== PROGRESS REPORT ROUTES ==========
-router.post('/progress-reports', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), createProgressReport);
-router.get('/progress-reports', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getProgressReports);
-router.get('/progress-reports/my', authenticate, authorize('PARENT_RESIDENT'), getMyChildrenProgressReports);
+router.post('/progress-reports', authenticate, createProgressReport);
+router.get('/progress-reports', authenticate, getProgressReports);
+router.get('/progress-reports/my', authenticate, getMyChildrenProgressReports);
 
 // ========== LEARNING MATERIAL ROUTES ==========
-router.post('/learning-materials', learningMaterialUpload.single('file'), authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), createLearningMaterial);
+router.post('/learning-materials', learningMaterialUpload.single('file'), authenticate, createLearningMaterial);
 router.get('/learning-materials', authenticate, getLearningMaterials);
 router.get('/learning-materials/:id/download', authenticate, downloadLearningMaterial);
-router.patch('/learning-materials/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), updateLearningMaterial);
-router.delete('/learning-materials/:id', authenticate, authorize('DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'), deleteLearningMaterial);
+router.patch('/learning-materials/:id', authenticate, updateLearningMaterial);
+router.delete('/learning-materials/:id', authenticate, deleteLearningMaterial);
 
 export default router;

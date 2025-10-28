@@ -76,20 +76,35 @@ interface User {
   updatedAt?: string;
 }
 
-const USER_ROLES = [
-  'SYSTEM_ADMIN',
-  'BARANGAY_CAPTAIN',
-  'BARANGAY_OFFICIAL',
-  'BHW',
-  'BHW_COORDINATOR',
-  'DAYCARE_STAFF',
-  'DAYCARE_TEACHER',
-  'SK_OFFICER',
-  'SK_CHAIRMAN',
-  'PARENT_RESIDENT',
+const ROLE_HIERARCHY = {
+  'Administrative': {
+    roles: ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'],
+    variant: 'default' as const,
+    icon: Shield
+  },
+  'Health Services': {
+    roles: ['BHW_COORDINATOR', 'BHW'],
+    variant: 'secondary' as const,
+    icon: Users
+  },
+  'Daycare Services': {
+    roles: ['DAYCARE_TEACHER', 'DAYCARE_STAFF'],
+    variant: 'outline' as const,
+    icon: Users
+  },
+  'Youth Services': {
+    roles: ['SK_CHAIRMAN', 'SK_OFFICER'],
+    variant: 'secondary' as const,
+    icon: Users
+  },
+  'Community': {
+    roles: ['PARENT_RESIDENT', 'VISITOR'],
+    variant: 'outline' as const,
+    icon: Users
+  }
+};
 
-  'VISITOR'
-];
+const USER_ROLES = Object.values(ROLE_HIERARCHY).flatMap(group => group.roles);
 
 const USER_STATUSES = ['ACTIVE', 'PENDING', 'SUSPENDED', 'INACTIVE'];
 
@@ -525,10 +540,18 @@ export default function UserManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
-                  {USER_ROLES.map(role => (
-                    <SelectItem key={role} value={role}>
-                      {role.replace(/_/g, ' ')}
-                    </SelectItem>
+                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles, icon: IconComponent }]) => (
+                    <div key={category}>
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-2">
+                        <IconComponent className="h-3 w-3" />
+                        {category}
+                      </div>
+                      {roles.map(role => (
+                        <SelectItem key={role} value={role} className="pl-6">
+                          {role.replace(/_/g, ' ')}
+                        </SelectItem>
+                      ))}
+                    </div>
                   ))}
                 </SelectContent>
               </Select>
@@ -773,8 +796,8 @@ export default function UserManagement() {
 
         {/* Edit User Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <Edit className="h-5 w-5" />
                 Edit User
@@ -783,7 +806,7 @@ export default function UserManagement() {
                 Update user information and permissions
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto flex-1 pr-2">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -835,20 +858,44 @@ export default function UserManagement() {
               {/* Roles */}
               <div className="space-y-4">
                 <Label className="text-sm font-medium">Roles</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {USER_ROLES.map(role => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={role}
-                        checked={editFormData.roles.includes(role)}
-                        onChange={() => handleRoleToggle(role)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={role} className="text-sm">
-                        {role.replace(/_/g, ' ')}
-                      </Label>
-                    </div>
+                <div className="space-y-3">
+                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
+                    <Card key={category} className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
+                        <Badge variant={variant} className="text-xs">
+                          {category}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {roles.map(role => (
+                          <div 
+                            key={role} 
+                            className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                              editFormData.roles.includes(role) 
+                                ? 'bg-primary/10 border border-primary/20' 
+                                : 'hover:bg-muted/50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              id={role}
+                              checked={editFormData.roles.includes(role)}
+                              onChange={() => handleRoleToggle(role)}
+                              className="rounded border-input"
+                            />
+                            <Label 
+                              htmlFor={role} 
+                              className={`text-sm cursor-pointer ${
+                                editFormData.roles.includes(role) ? 'font-medium text-primary' : ''
+                              }`}
+                            >
+                              {role.replace(/_/g, ' ')}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </div>
@@ -856,7 +903,7 @@ export default function UserManagement() {
               <Separator />
 
               {/* Two-Factor Authentication */}
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-sm font-medium">Two-Factor Authentication</Label>
                   <p className="text-sm text-muted-foreground">
@@ -867,24 +914,24 @@ export default function UserManagement() {
                   checked={editFormData.otpEnabled}
                   onCheckedChange={(checked) => setEditFormData({...editFormData, otpEnabled: checked})}
                 />
-              </div>
+              </div> */}
 
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateUser}>
-                  Update User
-                </Button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-3 flex-shrink-0 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateUser}>
+                Update User
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
 
         {/* Add User Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 Add New User
@@ -893,7 +940,7 @@ export default function UserManagement() {
                 Create a new user account with specified roles and permissions
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto flex-1 pr-2">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -948,20 +995,44 @@ export default function UserManagement() {
               {/* Roles */}
               <div className="space-y-4">
                 <Label className="text-sm font-medium">Roles *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {USER_ROLES.map(role => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`add-${role}`}
-                        checked={addFormData.roles.includes(role)}
-                        onChange={() => handleAddRoleToggle(role)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={`add-${role}`} className="text-sm">
-                        {role.replace(/_/g, ' ')}
-                      </Label>
-                    </div>
+                <div className="space-y-3">
+                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
+                    <Card key={category} className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
+                        <Badge variant={variant} className="text-xs">
+                          {category}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {roles.map(role => (
+                          <div 
+                            key={role} 
+                            className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                              addFormData.roles.includes(role) 
+                                ? 'bg-primary/10 border border-primary/20' 
+                                : 'hover:bg-muted/50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`add-${role}`}
+                              checked={addFormData.roles.includes(role)}
+                              onChange={() => handleAddRoleToggle(role)}
+                              className="rounded border-input"
+                            />
+                            <Label 
+                              htmlFor={`add-${role}`} 
+                              className={`text-sm cursor-pointer ${
+                                addFormData.roles.includes(role) ? 'font-medium text-primary' : ''
+                              }`}
+                            >
+                              {role.replace(/_/g, ' ')}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </div>
@@ -982,17 +1053,17 @@ export default function UserManagement() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddUser}
-                  disabled={!addFormData.firstName || !addFormData.lastName || !addFormData.email || addFormData.roles.length === 0}
-                >
-                  Create User
-                </Button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-3 flex-shrink-0 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddUser}
+                disabled={!addFormData.firstName || !addFormData.lastName || !addFormData.email || addFormData.roles.length === 0}
+              >
+                Create User
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

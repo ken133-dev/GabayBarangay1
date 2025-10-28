@@ -12,6 +12,7 @@ import {
 import {
   Activity, Users, TrendingUp, Calendar, Award, Download, ArrowLeft, Target
 } from 'lucide-react';
+import { exportSKReportToPDF, exportSKReportToExcel } from '@/lib/exportUtils';
 
 interface SKReport {
   summary: {
@@ -64,8 +65,24 @@ export default function SKReports() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting SK report to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!report) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting SK report:', report); // Debug log
+      if (format === 'pdf') {
+        exportSKReportToPDF(report);
+        toast.success('SK report exported to PDF successfully!');
+      } else {
+        exportSKReportToExcel(report);
+        toast.success('SK report exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {

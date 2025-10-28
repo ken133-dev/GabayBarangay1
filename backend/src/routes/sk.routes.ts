@@ -5,6 +5,6 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 const router = Router();
 
 // SK Analytics route
-router.get('/analytics', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getSKAnalytics);
+router.get('/analytics', authenticate, getSKAnalytics);
 
 export default router;
