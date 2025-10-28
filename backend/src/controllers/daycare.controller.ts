@@ -463,26 +463,34 @@ export const getMyChildrenProgressReports = async (req: AuthRequest, res: Respon
 
 // ========== LEARNING MATERIALS ==========
 
+// ========== LEARNING MATERIALS ==========
+
 export const createLearningMaterial = async (req: AuthRequest, res: Response) => {
   try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
     const {
       title,
       description,
-      fileUrl,
-      fileType,
       category,
       isPublic
     } = req.body;
     const uploadedBy = req.user!.userId;
+
+    // Create file URL
+    const fileUrl = `/uploads/learning-materials/${file.filename}`;
 
     const material = await prisma.learningMaterial.create({
       data: {
         title,
         description,
         fileUrl,
-        fileType,
+        fileType: file.mimetype,
         category,
-        isPublic: isPublic !== false,
+        isPublic: isPublic === 'true',
         uploadedBy
       }
     });
@@ -520,7 +528,38 @@ export const getLearningMaterials = async (req: AuthRequest, res: Response) => {
       orderBy: { uploadedAt: 'desc' }
     });
 
-    res.json({ materials });
+    // Get user information for uploadedBy
+    const userIds = materials.map(m => m.uploadedBy);
+    const users = await prisma.user.findMany({
+      where: {
+        id: { in: userIds }
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true
+      }
+    });
+
+    const userMap = users.reduce((acc, user) => {
+      acc[user.id] = `${user.firstName} ${user.lastName}`;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // Format the response to match frontend expectations
+    const formattedMaterials = materials.map(material => ({
+      id: material.id,
+      title: material.title,
+      description: material.description,
+      fileUrl: material.fileUrl,
+      fileType: material.fileType,
+      category: material.category,
+      uploadedBy: userMap[material.uploadedBy] || 'Unknown',
+      uploadedAt: material.uploadedAt,
+      isPublic: material.isPublic
+    }));
+
+    res.json({ materials: formattedMaterials });
   } catch (error) {
     console.error('Get learning materials error:', error);
     res.status(500).json({ error: 'Failed to fetch learning materials' });
@@ -551,6 +590,25 @@ export const deleteLearningMaterial = async (req: AuthRequest, res: Response) =>
   try {
     const { id } = req.params;
 
+    // First get the material to get the file path
+    const material = await prisma.learningMaterial.findUnique({
+      where: { id }
+    });
+
+    if (!material) {
+      return res.status(404).json({ error: 'Learning material not found' });
+    }
+
+    // Delete the file from disk
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '../../uploads/learning-materials', material.fileUrl.split('/').pop());
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Delete from database
     await prisma.learningMaterial.delete({
       where: { id }
     });
@@ -559,5 +617,50 @@ export const deleteLearningMaterial = async (req: AuthRequest, res: Response) =>
   } catch (error) {
     console.error('Delete learning material error:', error);
     res.status(500).json({ error: 'Failed to delete learning material' });
+  }
+};
+
+export const downloadLearningMaterial = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const material = await prisma.learningMaterial.findUnique({
+      where: { id }
+    });
+
+    if (!material) {
+      return res.status(404).json({ error: 'Learning material not found' });
+    }
+
+    // Check permissions - only staff can download private materials
+    const userRoles = req.user!.roles || [];
+    const userRole = userRoles[0] || 'VISITOR';
+
+    if (!material.isPublic && !['DAYCARE_STAFF', 'DAYCARE_TEACHER', 'SYSTEM_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '../../uploads/learning-materials', material.fileUrl.split('/').pop());
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    // Use res.download to handle headers automatically
+    const filename = material.fileUrl.split('/').pop() || 'download';
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        console.error('Download error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to download file' });
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Download learning material error:', error);
+    res.status(500).json({ error: 'Failed to download learning material' });
   }
 };

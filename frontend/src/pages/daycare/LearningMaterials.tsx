@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
+import { api, BACKEND_BASE_URL } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,6 @@ export default function LearningMaterials() {
     isPublic: 'true'
   });
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
   useEffect(() => {
     fetchMaterials();
   }, []);
@@ -45,7 +43,7 @@ export default function LearningMaterials() {
     try {
       const response = await api.get('/daycare/learning-materials');
       setMaterials(response.data.materials || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch learning materials');
     } finally {
       setLoading(false);
@@ -105,7 +103,6 @@ export default function LearningMaterials() {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('isPublic', formData.isPublic);
-      formDataToSend.append('uploadedBy', `${user.firstName} ${user.lastName}`);
 
       toast.info('Uploading file...');
 
@@ -125,27 +122,50 @@ export default function LearningMaterials() {
       });
       setSelectedFile(null);
       fetchMaterials();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to upload material');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error && error.message ? error.message : 'Failed to upload material');
     }
+  };
+
+  const handleView = (fileUrl: string) => {
+    const fullUrl = `${BACKEND_BASE_URL}${fileUrl}`;
+    window.open(fullUrl, '_blank');
   };
 
   const handleDownload = async (materialId: string, fileName: string) => {
     try {
       toast.info('Preparing download...');
-      // TODO: Implement actual file download
-      // const response = await api.get(`/daycare/learning-materials/${materialId}/download`, {
-      //   responseType: 'blob'
-      // });
-      // const url = window.URL.createObjectURL(new Blob([response.data]));
-      // const link = document.createElement('a');
-      // link.href = url;
-      // link.setAttribute('download', fileName);
-      // document.body.appendChild(link);
-      // link.click();
-      toast.success('Download feature coming soon!');
-    } catch (error) {
+      const response = await api.get(`/daycare/learning-materials/${materialId}/download`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Download started!');
+    } catch {
       toast.error('Failed to download file');
+    }
+  };
+
+  const handleDelete = async (materialId: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      toast.info('Deleting material...');
+      await api.delete(`/daycare/learning-materials/${materialId}`);
+      toast.success('Learning material deleted successfully!');
+      fetchMaterials();
+    } catch {
+      toast.error('Failed to delete learning material');
     }
   };
 
@@ -296,13 +316,31 @@ export default function LearningMaterials() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownload(material.id, material.title)}
-                          >
-                            Download
-                          </Button>
+                          <div className="flex gap-2">
+                            {(material.fileType.includes('image') || material.fileType.includes('pdf')) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleView(material.fileUrl)}
+                            >
+                              View
+                            </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownload(material.id, material.fileUrl.split('/').pop() || material.title)}
+                            >
+                              Download
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(material.id, material.title)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
