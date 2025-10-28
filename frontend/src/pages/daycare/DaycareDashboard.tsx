@@ -184,7 +184,7 @@ export default function DaycareDashboard() {
                 <Button
                   className="w-full justify-start"
                   variant="outline"
-                  onClick={() => navigate('/daycare/learning-materials')}
+                  onClick={() => navigate('/daycare/materials')}
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
                   Learning Materials

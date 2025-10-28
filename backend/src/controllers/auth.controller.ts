@@ -4,6 +4,12 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { sendOTP, verifyOTP } from '../services/otp.service';
 
+// Type for role selection from Prisma query
+type RoleSelect = {
+  name: string;
+  displayName: string;
+};
+
 export const register = async (req: Request, res: Response) => {
   try {
     const {
@@ -90,7 +96,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
-    const roleNames = user.roles.map(r => r.name);
+    const roleNames = user.roles.map((r: RoleSelect) => r.name);
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -140,7 +146,7 @@ export const getProfile = async (req: Request, res: Response) => {
     }
 
     // Format response to match frontend expectations
-    const roleNames = user.roles.map(r => r.name);
+    const roleNames = user.roles.map((r: RoleSelect) => r.name);
     const response = {
       id: user.id,
       email: user.email,
@@ -190,7 +196,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     });
 
     // Format response to match frontend expectations
-    const roleNames = user.roles.map(r => r.name);
+    const roleNames = user.roles.map((r: RoleSelect) => r.name);
     const response = {
       id: user.id,
       email: user.email,
@@ -302,7 +308,7 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
-    const roleNames = user.roles.map(r => r.name);
+    const roleNames = user.roles.map((r: RoleSelect) => r.name);
     const token = generateToken({
       userId: user.id,
       email: user.email,
