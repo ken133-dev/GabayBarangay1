@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from 'sonner';
 import { Heart, Baby, Trophy, Eye, EyeOff, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Logo } from '@/components/Logo';
@@ -15,9 +16,22 @@ export default function Login() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
   const navigate = useNavigate();
   const { login, sendOTP: sendLoginOTP, verifyOTP: verifyLoginOTP } = useAuth();
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +41,15 @@ export default function Login() {
       if (step === 'credentials') {
         // First step: validate credentials
         const { requiresOTP } = await login(email, password);
+
+        // Handle remember me functionality
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+          localStorage.setItem('rememberedPassword', password);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem('rememberedPassword');
+        }
 
         if (requiresOTP) {
           // Send OTP if required
@@ -155,6 +178,19 @@ export default function Login() {
                           )}
                         </Button>
                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      />
+                      <Label
+                        htmlFor="remember"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Remember me
+                      </Label>
                     </div>
                   </>
                 ) : (
