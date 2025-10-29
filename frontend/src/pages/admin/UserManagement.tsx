@@ -292,21 +292,39 @@ export default function UserManagement() {
   };
 
   const handleRoleToggle = (role: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter(r => r !== role)
-        : [...prev.roles, role]
-    }));
+    if (role === 'SYSTEM_ADMIN') {
+      // Special handling for SYSTEM_ADMIN - toggle all roles
+      const hasSystemAdmin = editFormData.roles.includes('SYSTEM_ADMIN');
+      setEditFormData(prev => ({
+        ...prev,
+        roles: hasSystemAdmin ? [] : USER_ROLES
+      }));
+    } else {
+      setEditFormData(prev => ({
+        ...prev,
+        roles: prev.roles.includes(role)
+          ? prev.roles.filter(r => r !== role)
+          : [...prev.roles, role]
+      }));
+    }
   };
 
   const handleAddRoleToggle = (role: string) => {
-    setAddFormData(prev => ({
-      ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter(r => r !== role)
-        : [...prev.roles, role]
-    }));
+    if (role === 'SYSTEM_ADMIN') {
+      // Special handling for SYSTEM_ADMIN - toggle all roles
+      const hasSystemAdmin = addFormData.roles.includes('SYSTEM_ADMIN');
+      setAddFormData(prev => ({
+        ...prev,
+        roles: hasSystemAdmin ? [] : USER_ROLES
+      }));
+    } else {
+      setAddFormData(prev => ({
+        ...prev,
+        roles: prev.roles.includes(role)
+          ? prev.roles.filter(r => r !== role)
+          : [...prev.roles, role]
+      }));
+    }
   };
 
   const handleAddUser = async () => {
@@ -847,7 +865,24 @@ export default function UserManagement() {
 
               {/* Roles */}
               <div className="space-y-4">
-                <Label className="text-sm font-medium">Roles</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Roles</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="system-admin-toggle" className="text-sm font-medium text-muted-foreground">
+                      System Admin
+                    </Label>
+                    <Switch
+                      id="system-admin-toggle"
+                      checked={editFormData.roles.includes('SYSTEM_ADMIN')}
+                      onCheckedChange={() => handleRoleToggle('SYSTEM_ADMIN')}
+                    />
+                    {editFormData.roles.includes('SYSTEM_ADMIN') && (
+                      <Badge variant="secondary" className="text-xs">
+                        All Roles
+                      </Badge>
+                    )}
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
                     <Card key={category} className="p-4">
@@ -858,32 +893,36 @@ export default function UserManagement() {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {roles.map(role => (
-                          <div 
-                            key={role} 
-                            className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
-                              editFormData.roles.includes(role) 
-                                ? 'bg-primary/10 border border-primary/20' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              id={role}
-                              checked={editFormData.roles.includes(role)}
-                              onChange={() => handleRoleToggle(role)}
-                              className="rounded border-input"
-                            />
-                            <Label 
-                              htmlFor={role} 
-                              className={`text-sm cursor-pointer ${
-                                editFormData.roles.includes(role) ? 'font-medium text-primary' : ''
+                        {roles.filter(role => role !== 'SYSTEM_ADMIN').map(role => {
+                          const isSelected = editFormData.roles.includes(role);
+                          
+                          return (
+                            <div 
+                              key={role} 
+                              className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                                isSelected 
+                                  ? 'bg-primary/10 border border-primary/20' 
+                                  : 'hover:bg-muted/50'
                               }`}
                             >
-                              {role.replace(/_/g, ' ')}
-                            </Label>
-                          </div>
-                        ))}
+                              <input
+                                type="checkbox"
+                                id={role}
+                                checked={isSelected}
+                                onChange={() => handleRoleToggle(role)}
+                                className="rounded border-input"
+                              />
+                              <Label 
+                                htmlFor={role} 
+                                className={`text-sm cursor-pointer ${
+                                  isSelected ? 'font-medium text-primary' : ''
+                                }`}
+                              >
+                                {role.replace(/_/g, ' ')}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </Card>
                   ))}
@@ -984,7 +1023,24 @@ export default function UserManagement() {
 
               {/* Roles */}
               <div className="space-y-4">
-                <Label className="text-sm font-medium">Roles *</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Roles *</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="add-system-admin-toggle" className="text-sm font-medium text-muted-foreground">
+                      System Admin
+                    </Label>
+                    <Switch
+                      id="add-system-admin-toggle"
+                      checked={addFormData.roles.includes('SYSTEM_ADMIN')}
+                      onCheckedChange={() => handleAddRoleToggle('SYSTEM_ADMIN')}
+                    />
+                    {addFormData.roles.includes('SYSTEM_ADMIN') && (
+                      <Badge variant="secondary" className="text-xs">
+                        All Roles
+                      </Badge>
+                    )}
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
                     <Card key={category} className="p-4">
@@ -995,32 +1051,36 @@ export default function UserManagement() {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {roles.map(role => (
-                          <div 
-                            key={role} 
-                            className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
-                              addFormData.roles.includes(role) 
-                                ? 'bg-primary/10 border border-primary/20' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              id={`add-${role}`}
-                              checked={addFormData.roles.includes(role)}
-                              onChange={() => handleAddRoleToggle(role)}
-                              className="rounded border-input"
-                            />
-                            <Label 
-                              htmlFor={`add-${role}`} 
-                              className={`text-sm cursor-pointer ${
-                                addFormData.roles.includes(role) ? 'font-medium text-primary' : ''
+                        {roles.filter(role => role !== 'SYSTEM_ADMIN').map(role => {
+                          const isSelected = addFormData.roles.includes(role);
+                          
+                          return (
+                            <div 
+                              key={role} 
+                              className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                                isSelected 
+                                  ? 'bg-primary/10 border border-primary/20' 
+                                  : 'hover:bg-muted/50'
                               }`}
                             >
-                              {role.replace(/_/g, ' ')}
-                            </Label>
-                          </div>
-                        ))}
+                              <input
+                                type="checkbox"
+                                id={`add-${role}`}
+                                checked={isSelected}
+                                onChange={() => handleAddRoleToggle(role)}
+                                className="rounded border-input"
+                              />
+                              <Label 
+                                htmlFor={`add-${role}`} 
+                                className={`text-sm cursor-pointer ${
+                                  isSelected ? 'font-medium text-primary' : ''
+                                }`}
+                              >
+                                {role.replace(/_/g, ' ')}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </Card>
                   ))}

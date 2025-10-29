@@ -31,6 +31,7 @@ export interface User {
   address?: string;
   role?: string; // Legacy single role support (string)
   roles?: string[]; // New multi-role support (array of role names)
+  permissions?: string[]; // Navigation permissions from all roles
   status: AccountStatus;
   otpEnabled?: boolean;
   createdAt: string;

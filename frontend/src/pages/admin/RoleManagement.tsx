@@ -74,15 +74,68 @@ interface Permission {
   description: string;
 }
 
-const PERMISSION_CATEGORIES = [
-  'User Management',
-  'Role Management',
-  'Health Services',
-  'Daycare Management',
-  'SK Management',
-  'System Administration',
-  'Reports'
-];
+const NAVIGATION_PERMISSIONS = {
+  'Administrative': {
+    permissions: [
+      { name: 'ADMIN_DASHBOARD', description: 'Access admin dashboard' },
+      { name: 'USER_MANAGEMENT', description: 'View user management pages' },
+      { name: 'ROLE_MANAGEMENT', description: 'View role management pages' },
+      { name: 'SYSTEM_SETTINGS', description: 'View system settings' },
+      { name: 'AUDIT_LOGS', description: 'View audit logs' },
+      { name: 'BACKUP_MANAGEMENT', description: 'View backup management' },
+      { name: 'ANNOUNCEMENTS', description: 'View announcement management' },
+      { name: 'BROADCAST_MANAGEMENT', description: 'View broadcast management' }
+    ]
+  },
+  'Health Services': {
+    permissions: [
+      { name: 'HEALTH_DASHBOARD', description: 'Access health services dashboard' },
+      { name: 'PATIENT_MANAGEMENT', description: 'View patient management' },
+      { name: 'APPOINTMENTS', description: 'View appointment scheduling' },
+      { name: 'HEALTH_RECORDS', description: 'View health records' },
+      { name: 'VACCINATIONS', description: 'View vaccination tracking' },
+      { name: 'CERTIFICATES', description: 'View certificate generation' },
+      { name: 'MY_HEALTH_RECORDS', description: 'View personal health records' }
+    ]
+  },
+  'Daycare Services': {
+    permissions: [
+      { name: 'DAYCARE_DASHBOARD', description: 'Access daycare dashboard' },
+      { name: 'CHILD_REGISTRATION', description: 'View child registration' },
+      { name: 'STUDENT_REGISTRATIONS', description: 'View student registrations' },
+      { name: 'ATTENDANCE_TRACKING', description: 'View attendance tracking' },
+      { name: 'PROGRESS_REPORTS', description: 'View progress reports' },
+      { name: 'LEARNING_MATERIALS', description: 'View learning materials' },
+      { name: 'EDUCATIONAL_RESOURCES', description: 'View educational resources' }
+    ]
+  },
+  'SK Engagement': {
+    permissions: [
+      { name: 'SK_DASHBOARD', description: 'Access SK dashboard' },
+      { name: 'EVENT_MANAGEMENT', description: 'View event management' },
+      { name: 'EVENT_REGISTRATION', description: 'View event registration' },
+      { name: 'ATTENDANCE_ANALYTICS', description: 'View attendance analytics' },
+      { name: 'SK_ANALYTICS', description: 'View SK analytics' },
+      { name: 'MY_EVENT_REGISTRATIONS', description: 'View personal event registrations' }
+    ]
+  },
+  'Reports & Analytics': {
+    permissions: [
+      { name: 'REPORTS_DASHBOARD', description: 'Access reports dashboard' },
+      { name: 'HEALTH_REPORTS', description: 'View health reports' },
+      { name: 'DAYCARE_REPORTS', description: 'View daycare reports' },
+      { name: 'SK_REPORTS', description: 'View SK reports' },
+      { name: 'CROSS_MODULE_ANALYTICS', description: 'View cross-module analytics' },
+      { name: 'HEALTH_STATS', description: 'View health statistics' }
+    ]
+  },
+  'Public Access': {
+    permissions: [
+      { name: 'PUBLIC_ANNOUNCEMENTS', description: 'View public announcements' },
+      { name: 'PUBLIC_EVENTS', description: 'View public events' }
+    ]
+  }
+};
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -262,9 +315,7 @@ export default function RoleManagement() {
     }
   };
 
-  const getPermissionsByCategory = (category: string) => {
-    return permissions.filter(p => p.category === category);
-  };
+
 
   const getRoleBadge = (role: Role) => {
     if (role.isSystem) {
@@ -302,7 +353,7 @@ export default function RoleManagement() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Role Management</h1>
             <p className="text-muted-foreground">
-              Create and manage user roles and their permissions
+              Manage user roles and control sidebar navigation visibility
             </p>
           </div>
           <div className="flex gap-2">
@@ -446,7 +497,7 @@ export default function RoleManagement() {
                   <TableRow>
                     <TableHead>Role Name</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead>Permissions</TableHead>
+                    <TableHead>Navigation Items</TableHead>
                     <TableHead>Users</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -469,7 +520,7 @@ export default function RoleManagement() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {role.permissions.length} permissions
+                          {role.permissions.length} nav items
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -589,17 +640,20 @@ export default function RoleManagement() {
 
               <Separator />
 
-              {/* Permissions */}
+              {/* Navigation Permissions */}
               <div className="space-y-4">
-                <Label className="text-sm font-medium">Permissions *</Label>
+                <Label className="text-sm font-medium">Navigation Permissions *</Label>
+                <p className="text-sm text-muted-foreground">
+                  Select which sidebar menu items this role can see. Users can still access pages directly via URL.
+                </p>
                 <div className="space-y-6">
-                  {PERMISSION_CATEGORIES.map(category => (
+                  {Object.entries(NAVIGATION_PERMISSIONS).map(([category, { permissions }]) => (
                     <div key={category} className="space-y-3">
                       <h4 className="font-medium text-sm text-muted-foreground border-b pb-1">
                         {category}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
-                        {getPermissionsByCategory(category).map(permission => (
+                        {permissions.map(permission => (
                           <div key={permission.name} className="flex items-start space-x-2">
                             <input
                               type="checkbox"
@@ -688,17 +742,20 @@ export default function RoleManagement() {
 
               <Separator />
 
-              {/* Permissions */}
+              {/* Navigation Permissions */}
               <div className="space-y-4">
-                <Label className="text-sm font-medium">Permissions</Label>
+                <Label className="text-sm font-medium">Navigation Permissions</Label>
+                <p className="text-sm text-muted-foreground">
+                  Select which sidebar menu items this role can see. Users can still access pages directly via URL.
+                </p>
                 <div className="space-y-6">
-                  {PERMISSION_CATEGORIES.map(category => (
+                  {Object.entries(NAVIGATION_PERMISSIONS).map(([category, { permissions }]) => (
                     <div key={category} className="space-y-3">
                       <h4 className="font-medium text-sm text-muted-foreground border-b pb-1">
                         {category}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
-                        {getPermissionsByCategory(category).map(permission => (
+                        {permissions.map(permission => (
                           <div key={permission.name} className="flex items-start space-x-2">
                             <input
                               type="checkbox"
@@ -798,14 +855,14 @@ export default function RoleManagement() {
                   </>
                 )}
 
-                {/* Permissions */}
+                {/* Navigation Permissions */}
                 <Separator />
                 <div className="space-y-4">
-                  <Label className="text-sm font-medium">Permissions ({selectedRole.permissions.length})</Label>
+                  <Label className="text-sm font-medium">Navigation Permissions ({selectedRole.permissions.length})</Label>
                   <div className="space-y-3">
-                    {PERMISSION_CATEGORIES.map(category => {
+                    {Object.entries(NAVIGATION_PERMISSIONS).map(([category, { permissions }]) => {
                       const categoryPermissions = selectedRole.permissions.filter(p =>
-                        getPermissionsByCategory(category).some(perm => perm.name === p)
+                        permissions.some(perm => perm.name === p)
                       );
                       if (categoryPermissions.length === 0) return null;
 
