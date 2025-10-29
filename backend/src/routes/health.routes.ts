@@ -30,47 +30,49 @@ import {
   getUpcomingVaccinations,
   // Certificate Management
   createCertificate,
-  getCertificates
+  getCertificates,
+  downloadCertificate
 } from '../controllers/health.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // ========== PATIENT ROUTES ==========
-router.post('/patients', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createPatient);
-router.get('/patients', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT', 'BARANGAY_OFFICIAL'), getAllPatients);
-router.get('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'PARENT_RESIDENT', 'BARANGAY_OFFICIAL'), getPatientById);
-router.put('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), updatePatient);
-router.delete('/patients/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), deletePatient);
+router.post('/patients', authenticate, createPatient);
+router.get('/patients', authenticate, getAllPatients);
+router.get('/patients/:id', authenticate, getPatientById);
+router.put('/patients/:id', authenticate, updatePatient);
+router.delete('/patients/:id', authenticate, deletePatient);
 
 // ========== APPOINTMENT ROUTES ==========
-router.post('/appointments', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createAppointment);
-router.get('/appointments', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getAppointments);
-router.get('/appointments/my', authenticate, authorize('PATIENT'), getMyAppointments);
+router.post('/appointments', authenticate, createAppointment);
+router.get('/appointments', authenticate, getAppointments);
+router.get('/appointments/my', authenticate, getMyAppointments);
 router.get('/appointments/:id', authenticate, getAppointmentById);
-router.put('/appointments/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), updateAppointment);
-router.patch('/appointments/:id/status', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), updateAppointmentStatus);
-router.delete('/appointments/:id', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), deleteAppointment);
+router.put('/appointments/:id', authenticate, updateAppointment);
+router.patch('/appointments/:id/status', authenticate, updateAppointmentStatus);
+router.delete('/appointments/:id', authenticate, deleteAppointment);
 
 // ========== HEALTH RECORD ROUTES ==========
-router.post('/records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createHealthRecord);
-router.get('/records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getHealthRecords);
-router.get('/records/my', authenticate, authorize('PATIENT'), getMyHealthRecords);
+router.post('/records', authenticate, createHealthRecord);
+router.get('/records', authenticate, getHealthRecords);
+router.get('/records/my', authenticate, getMyHealthRecords);
 
 // ========== IMMUNIZATION RECORD ROUTES ==========
-router.post('/immunization-records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createImmunizationRecord);
-router.get('/immunization-records', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getImmunizationRecords);
-router.get('/immunization-records/my', authenticate, authorize('PARENT_RESIDENT'), getMyImmunizationRecords);
+router.post('/immunization-records', authenticate, createImmunizationRecord);
+router.get('/immunization-records', authenticate, getImmunizationRecords);
+router.get('/immunization-records/my', authenticate, getMyImmunizationRecords);
 router.get('/immunization-schedule', authenticate, getImmunizationSchedule);
-router.get('/patients/:patientId/immunization-status', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getPatientImmunizationStatus);
+router.get('/patients/:patientId/immunization-status', authenticate, getPatientImmunizationStatus);
 
 // ========== VACCINATION ROUTES ==========
-router.post('/vaccinations', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createVaccination);
-router.get('/vaccinations', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getVaccinations);
-router.get('/vaccinations/upcoming', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), getUpcomingVaccinations);
+router.post('/vaccinations', authenticate, createVaccination);
+router.get('/vaccinations', authenticate, getVaccinations);
+router.get('/vaccinations/upcoming', authenticate, getUpcomingVaccinations);
 
 // ========== CERTIFICATE ROUTES ==========
-router.post('/certificates', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN'), createCertificate);
-router.get('/certificates', authenticate, authorize('BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getCertificates);
+router.post('/certificates', authenticate, createCertificate);
+router.get('/certificates', authenticate, getCertificates);
+router.get('/certificates/:id/download', authenticate, downloadCertificate);
 
 export default router;

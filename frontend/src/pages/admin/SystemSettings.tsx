@@ -74,10 +74,6 @@ export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState('general');
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
-
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
@@ -94,16 +90,9 @@ export default function SystemSettings() {
     }
   }, []);
 
-
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
-
-  fetchSettings();
-  }, [isAdmin, navigate, fetchSettings]);
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSaveSettings = async () => {
     try {

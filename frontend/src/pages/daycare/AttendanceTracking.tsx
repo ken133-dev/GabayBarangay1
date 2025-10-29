@@ -27,6 +27,7 @@ interface AttendanceRecord {
   timeIn?: string;
   timeOut?: string;
   notes?: string;
+  remarks?: string;
   recordedBy: string;
 }
 
@@ -44,6 +45,7 @@ export default function AttendanceTracking() {
     timeOut: '',
     notes: ''
   });
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -75,24 +77,36 @@ export default function AttendanceTracking() {
   const handleMarkAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.studentId) {
+    if (!formData.studentId && !editingRecord) {
       toast.error('Please select a student');
       return;
     }
 
     try {
-      await api.post('/daycare/attendance', {
-        studentId: formData.studentId,
-        attendanceDate: selectedDate,
-        status: formData.status,
-        timeIn: formData.timeIn || null,
-        timeOut: formData.timeOut || null,
-        notes: formData.notes,
-        recordedBy: `${user.firstName} ${user.lastName}`
-      });
+      if (editingRecord) {
+        // Update existing record
+        await api.patch(`/daycare/attendance/${editingRecord.id}`, {
+          status: formData.status,
+          timeIn: formData.timeIn || null,
+          timeOut: formData.timeOut || null,
+          remarks: formData.notes
+        });
+        toast.success('Attendance updated successfully!');
+      } else {
+        // Create new record
+        await api.post('/daycare/attendance', {
+          studentId: formData.studentId,
+          attendanceDate: selectedDate,
+          status: formData.status,
+          timeIn: formData.timeIn || null,
+          timeOut: formData.timeOut || null,
+          notes: formData.notes
+        });
+        toast.success('Attendance marked successfully!');
+      }
 
-      toast.success('Attendance marked successfully!');
       setShowDialog(false);
+      setEditingRecord(null);
       setFormData({
         studentId: '',
         status: 'PRESENT',
@@ -102,18 +116,20 @@ export default function AttendanceTracking() {
       });
       fetchAttendance();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to mark attendance');
+      toast.error(error.response?.data?.error || 'Failed to save attendance');
     }
   };
 
   const handleQuickMark = async (studentId: string, status: string) => {
     try {
+      const currentTime = new Date();
+      const timeString = currentTime.toTimeString().slice(0, 5); // HH:MM format
+      
       await api.post('/daycare/attendance', {
         studentId,
         attendanceDate: selectedDate,
         status,
-        timeIn: status === 'PRESENT' ? new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : null,
-        recordedBy: `${user.firstName} ${user.lastName}`
+        timeIn: status === 'PRESENT' || status === 'LATE' ? timeString : null
       });
 
       toast.success('Attendance marked!');
@@ -121,6 +137,18 @@ export default function AttendanceTracking() {
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to mark attendance');
     }
+  };
+
+  const handleEditRecord = (record: AttendanceRecord) => {
+    setEditingRecord(record);
+    setFormData({
+      studentId: record.studentId,
+      status: record.status,
+      timeIn: record.timeIn ? new Date(record.timeIn).toTimeString().slice(0, 5) : '',
+      timeOut: record.timeOut ? new Date(record.timeOut).toTimeString().slice(0, 5) : '',
+      notes: record.remarks || record.notes || ''
+    });
+    setShowDialog(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -240,8 +268,15 @@ export default function AttendanceTracking() {
                         <div className="flex items-center gap-2">
                           {getStatusBadge(record.status)}
                           {record.timeIn && (
-                            <span className="text-sm text-gray-600">In: {record.timeIn}</span>
+                            <span className="text-sm text-gray-600">In: {new Date(record.timeIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditRecord(record)}
+                          >
+                            Edit
+                          </Button>
                         </div>
                       ) : (
                         <div className="flex gap-2">
@@ -297,6 +332,7 @@ export default function AttendanceTracking() {
                         <TableHead>Time Out</TableHead>
                         <TableHead>Notes</TableHead>
                         <TableHead>Recorded By</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -308,10 +344,23 @@ export default function AttendanceTracking() {
                           <TableCell>
                             {getStatusBadge(record.status)}
                           </TableCell>
-                          <TableCell>{record.timeIn || '-'}</TableCell>
-                          <TableCell>{record.timeOut || '-'}</TableCell>
-                          <TableCell>{record.notes || '-'}</TableCell>
+                          <TableCell>
+                            {record.timeIn ? new Date(record.timeIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.timeOut ? new Date(record.timeOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          </TableCell>
+                          <TableCell>{record.remarks || record.notes || '-'}</TableCell>
                           <TableCell>{record.recordedBy}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditRecord(record)}
+                            >
+                              Edit
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -322,31 +371,54 @@ export default function AttendanceTracking() {
           </Card>
         )}
 
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <Dialog open={showDialog} onOpenChange={(open) => {
+          setShowDialog(open);
+          if (!open) {
+            setEditingRecord(null);
+            setFormData({
+              studentId: '',
+              status: 'PRESENT',
+              timeIn: '',
+              timeOut: '',
+              notes: ''
+            });
+          }
+        }}>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>Mark Attendance</DialogTitle>
+              <DialogTitle>{editingRecord ? 'Edit Attendance' : 'Mark Attendance'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleMarkAttendance} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Select Student *</label>
-                <Select
-                  value={formData.studentId}
-                  onValueChange={(value) => setFormData({...formData, studentId: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a student..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.firstName} {student.lastName}
-                        {isStudentMarked(student.id) && ' (Already marked)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!editingRecord && (
+                <div>
+                  <label className="text-sm font-medium">Select Student *</label>
+                  <Select
+                    value={formData.studentId}
+                    onValueChange={(value) => setFormData({...formData, studentId: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a student..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.firstName} {student.lastName}
+                          {isStudentMarked(student.id) && ' (Already marked)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {editingRecord && (
+                <div>
+                  <label className="text-sm font-medium">Student</label>
+                  <div className="p-2 bg-gray-50 rounded border">
+                    {editingRecord.student?.firstName} {editingRecord.student?.lastName}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium">Attendance Status *</label>
@@ -398,10 +470,20 @@ export default function AttendanceTracking() {
               </div>
 
               <div className="flex gap-2 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowDialog(false);
+                  setEditingRecord(null);
+                  setFormData({
+                    studentId: '',
+                    status: 'PRESENT',
+                    timeIn: '',
+                    timeOut: '',
+                    notes: ''
+                  });
+                }}>
                   Cancel
                 </Button>
-                <Button type="submit">Mark Attendance</Button>
+                <Button type="submit">{editingRecord ? 'Update Attendance' : 'Mark Attendance'}</Button>
               </div>
             </form>
           </DialogContent>

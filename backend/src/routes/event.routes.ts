@@ -25,26 +25,26 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 const router = Router();
 
 // ========== EVENT MANAGEMENT ROUTES ==========
-router.post('/', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'), createEvent);
-router.get('/', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getAllEvents);
+router.post('/', authenticate, createEvent);
+router.get('/', authenticate, getAllEvents);
 router.get('/public', getPublicEvents);
-router.get('/:id', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getEventById);
-router.put('/:id', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'), updateEvent);
-router.patch('/:id/status', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'), updateEventStatus);
-router.delete('/:id', authenticate, authorize('SK_CHAIRMAN', 'SYSTEM_ADMIN'), deleteEvent);
+router.get('/:id', authenticate, getEventById);
+router.put('/:id', authenticate, updateEvent);
+router.patch('/:id/status', authenticate, updateEventStatus);
+router.delete('/:id', authenticate, deleteEvent);
 
 // ========== EVENT REGISTRATION ROUTES ==========
 router.post('/register', authenticate, registerForEvent);
-router.get('/:eventId/registrations', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getEventRegistrations);
+router.get('/:eventId/registrations', authenticate, getEventRegistrations);
 router.get('/registrations/my', authenticate, getMyRegistrations);
 router.delete('/:eventId/registrations/cancel', authenticate, cancelRegistration);
 
 // ========== EVENT ATTENDANCE ROUTES ==========
-router.post('/attendance', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN'), recordAttendance);
-router.get('/:eventId/attendance', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getEventAttendance);
+router.post('/attendance', authenticate, recordAttendance);
+router.get('/:eventId/attendance', authenticate, getEventAttendance);
 
 // ========== ANALYTICS & CERTIFICATES ROUTES ==========
-router.get('/:eventId/analytics', authenticate, authorize('SK_OFFICER', 'SK_CHAIRMAN', 'SYSTEM_ADMIN', 'BARANGAY_OFFICIAL'), getEventAnalytics);
-router.post('/:eventId/certificates', authenticate, authorize('SK_CHAIRMAN', 'SYSTEM_ADMIN'), generateCertificates);
+router.get('/:eventId/analytics', authenticate, getEventAnalytics);
+router.post('/:eventId/certificates', authenticate, generateCertificates);
 
 export default router;

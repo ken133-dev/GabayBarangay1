@@ -5,13 +5,27 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ArrowLeft, UserCheck } from 'lucide-react';
 import type { Event } from '@/types/index';
+
+interface EventRegistration {
+  id: string;
+  status: string;
+  registeredAt: string;
+  confirmedAt?: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
 
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
+  const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,10 +36,14 @@ export default function EventDetails() {
 
   const fetchEvent = async () => {
     try {
-      const response = await api.get(`/events/${id}`);
-      setEvent(response.data.event);
+      const [eventResponse, registrationsResponse] = await Promise.all([
+        api.get(`/events/${id}`),
+        api.get(`/events/${id}/registrations?status=APPROVED`)
+      ]);
+      setEvent(eventResponse.data.event);
+      setRegistrations(registrationsResponse.data.registrations || []);
     } catch (error) {
-      console.error('Failed to fetch event');
+      console.error('Failed to fetch event data');
     } finally {
       setLoading(false);
     }
@@ -128,6 +146,53 @@ export default function EventDetails() {
               <div>
                 <p className="font-medium mb-2">Category</p>
                 <Badge variant="outline">{event.category}</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Approved Participants */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Approved Participants ({registrations.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {registrations.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No approved participants yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {registrations.map((registration) => (
+                  <div key={registration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
+                          {registration.user.firstName.charAt(0)}{registration.user.lastName.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {registration.user.firstName} {registration.user.lastName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {registration.user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="default">Approved</Badge>
+                      {registration.confirmedAt && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Confirmed {new Date(registration.confirmedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

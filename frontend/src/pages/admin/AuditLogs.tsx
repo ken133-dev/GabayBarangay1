@@ -44,6 +44,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 
 interface AuditLog {
   id: string;
@@ -72,19 +73,9 @@ export default function AuditLogs() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
-
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/dashboard');
-      return;
-    }
-
     fetchAuditLogs();
-  }, [isAdmin, navigate]);
+  }, []);
 
   useEffect(() => {
     filterLogs();
@@ -136,35 +127,31 @@ export default function AuditLogs() {
     setDetailsDialogOpen(true);
   };
 
-  const handleExport = () => {
+  const handleExport = (format: 'pdf' | 'excel') => {
     try {
-      const csv = [
-        ['Timestamp', 'User', 'Role', 'Action', 'Entity', 'Severity', 'IP Address'],
-        ...filteredLogs.map(log => [
-          formatDateTime(log.timestamp),
-          log.userName,
-          log.userRole,
-          log.action,
-          log.entityType,
-          log.severity,
-          log.ipAddress || 'N/A'
-        ])
-      ].map(row => row.join(',')).join('\n');
+      const exportData = filteredLogs.map(log => ({
+        timestamp: formatDateTime(log.timestamp),
+        user: log.userName,
+        role: log.userRole,
+        action: log.action,
+        entity: log.entityType,
+        severity: log.severity,
+        ipaddress: log.ipAddress || 'N/A',
+        entityid: log.entityId || 'N/A'
+      }));
 
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const columns = ['Timestamp', 'User', 'Role', 'Action', 'Entity', 'Severity', 'IP Address', 'Entity ID'];
 
-      toast.success('Audit logs exported successfully');
+      if (format === 'pdf') {
+        exportToPDF(exportData, 'Audit Logs - Gabay Barangay', columns);
+        toast.success('Audit logs exported to PDF successfully!');
+      } else {
+        exportToExcel(exportData, 'Audit Logs');
+        toast.success('Audit logs exported to Excel successfully!');
+      }
     } catch (error) {
       console.error('Error exporting logs:', error);
-      toast.error('Failed to export audit logs');
+      toast.error(`Failed to export audit logs to ${format.toUpperCase()}`);
     }
   };
 
@@ -255,10 +242,16 @@ export default function AuditLogs() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => handleExport('pdf')}>
+                <Download className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+              <Button onClick={() => handleExport('excel')}>
+                <Download className="mr-2 h-4 w-4" />
+                Export Excel
+              </Button>
+            </div>
           </div>
         </div>
 

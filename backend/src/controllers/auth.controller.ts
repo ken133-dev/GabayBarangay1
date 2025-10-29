@@ -70,7 +70,8 @@ export const login = async (req: Request, res: Response) => {
         roles: {
           select: {
             name: true,
-            displayName: true
+            displayName: true,
+            permissions: true
           }
         }
       }
@@ -96,7 +97,16 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
-    const roleNames = user.roles.map((r: RoleSelect) => r.name);
+    const roleNames = user.roles.map(r => r.name);
+    
+    // Collect all permissions from all roles
+    const allPermissions = new Set<string>();
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        allPermissions.add(permission);
+      });
+    });
+    
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -114,6 +124,7 @@ export const login = async (req: Request, res: Response) => {
         lastName: user.lastName,
         role: roleNames[0] || 'VISITOR',
         roles: roleNames,
+        permissions: Array.from(allPermissions),
         status: user.status,
         otpEnabled: user.otpEnabled
       },
@@ -135,7 +146,8 @@ export const getProfile = async (req: Request, res: Response) => {
         roles: {
           select: {
             name: true,
-            displayName: true
+            displayName: true,
+            permissions: true
           }
         }
       }
@@ -146,7 +158,16 @@ export const getProfile = async (req: Request, res: Response) => {
     }
 
     // Format response to match frontend expectations
-    const roleNames = user.roles.map((r: RoleSelect) => r.name);
+    const roleNames = user.roles.map(r => r.name);
+    
+    // Collect all permissions from all roles
+    const allPermissions = new Set<string>();
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        allPermissions.add(permission);
+      });
+    });
+    
     const response = {
       id: user.id,
       email: user.email,
@@ -157,6 +178,7 @@ export const getProfile = async (req: Request, res: Response) => {
       address: user.address,
       role: roleNames[0] || 'VISITOR',
       roles: roleNames,
+      permissions: Array.from(allPermissions),
       status: user.status,
       otpEnabled: user.otpEnabled,
       createdAt: user.createdAt,
@@ -330,7 +352,8 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
         roles: {
           select: {
             name: true,
-            displayName: true
+            displayName: true,
+            permissions: true
           }
         }
       }
@@ -348,7 +371,16 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
     }
 
     // Generate token with multi-role support
-    const roleNames = user.roles.map((r: RoleSelect) => r.name);
+    const roleNames = user.roles.map(r => r.name);
+    
+    // Collect all permissions from all roles
+    const allPermissions = new Set<string>();
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        allPermissions.add(permission);
+      });
+    });
+    
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -366,6 +398,7 @@ export const verifyLoginOTP = async (req: Request, res: Response) => {
         lastName: user.lastName,
         role: roleNames[0] || 'VISITOR',
         roles: roleNames,
+        permissions: Array.from(allPermissions),
         status: user.status
       }
     });

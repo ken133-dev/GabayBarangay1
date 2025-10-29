@@ -218,11 +218,32 @@ export default function ChildRegistrationForm() {
                     <Label htmlFor="parentContact">Parent/Guardian Contact Number *</Label>
                     <Input
                       id="parentContact"
+                      type="tel"
                       value={formData.parentContact}
-                      onChange={(e) => handleInputChange('parentContact', e.target.value)}
-                      placeholder="Enter contact number"
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length > 0 && !value.startsWith('09')) {
+                          if (value.startsWith('9')) {
+                            value = '0' + value;
+                          } else if (value.startsWith('63')) {
+                            value = '0' + value.substring(2);
+                          } else {
+                            value = '09' + value;
+                          }
+                        }
+                        if (value.length > 11) {
+                          value = value.substring(0, 11);
+                        }
+                        handleInputChange('parentContact', value);
+                      }}
+                      placeholder="09XX XXX XXXX"
+                      pattern="09[0-9]{9}"
+                      maxLength={11}
                       required
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter Philippine mobile number starting with 09
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,10 +279,31 @@ export default function ChildRegistrationForm() {
                     <Label htmlFor="emergencyPhone">Emergency Contact Phone</Label>
                     <Input
                       id="emergencyPhone"
+                      type="tel"
                       value={formData.emergencyPhone}
-                      onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
-                      placeholder="Emergency contact phone number"
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length > 0 && !value.startsWith('09')) {
+                          if (value.startsWith('9')) {
+                            value = '0' + value;
+                          } else if (value.startsWith('63')) {
+                            value = '0' + value.substring(2);
+                          } else {
+                            value = '09' + value;
+                          }
+                        }
+                        if (value.length > 11) {
+                          value = value.substring(0, 11);
+                        }
+                        handleInputChange('emergencyPhone', value);
+                      }}
+                      placeholder="09XX XXX XXXX"
+                      pattern="09[0-9]{9}"
+                      maxLength={11}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter Philippine mobile number starting with 09
+                    </p>
                   </div>
                 </div>
               </div>

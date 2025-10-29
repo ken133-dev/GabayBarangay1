@@ -34,8 +34,8 @@ import {
 
 import { TeamSwitcher } from "@/components/team-switcher"
 
-const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean = false) => {
-  const hasRole = (role: string) => userRoles.includes(role);
+const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] = [], hasPatientRecord: boolean = false) => {
+  const hasPermission = (permission: string) => userPermissions.includes(permission);
   const navigation = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     main: [] as any[],
@@ -51,221 +51,252 @@ const getMultiRoleNavigation = (userRoles: string[], hasPatientRecord: boolean =
     isActive: true,
   });
 
-  // Admin Access (System Admin & Barangay Captain) - check both roles array and single role
-  const isSystemAdmin = hasRole('SYSTEM_ADMIN');
-  const isBarangayCaptain = hasRole('BARANGAY_CAPTAIN');
-  const isAdmin = isSystemAdmin || isBarangayCaptain;
-  const isSingleRoleAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('BARANGAY_CAPTAIN');
-  
-  if (isAdmin || isSingleRoleAdmin) {
-    navigation.main.push(
-      {
+  // Admin Navigation - Based on permissions
+  if (hasPermission('ADMIN_DASHBOARD') || hasPermission('USER_MANAGEMENT')) {
+    const adminItems = [];
+    
+    if (hasPermission('USER_MANAGEMENT')) {
+      adminItems.push({ title: "All Users", url: "/admin/users" });
+      adminItems.push({ title: "Pending Approvals", url: "/admin/users/pending" });
+    }
+    
+    if (hasPermission('ROLE_MANAGEMENT')) {
+      adminItems.push({ title: "Role Management", url: "/admin/users/roles" });
+    }
+    
+    if (adminItems.length > 0) {
+      navigation.main.push({
         title: "User Management",
         url: "/admin/users",
         icon: Users,
-        items: [
-          { title: "All Users", url: "/admin/users" },
-          { title: "Pending Approvals", url: "/admin/users/pending" },
-          ...(isSystemAdmin ? [{ title: "Role Management", url: "/admin/users/roles" }] : []),
-        ],
-      },
-      {
-        title: "Reports & Analytics",
-        url: "/reports",
-        icon: BarChart3,
-        items: [
-          { title: "Dashboard", url: "/reports" },
-          { title: "Health Reports", url: "/reports/health" },
-          { title: "Daycare Reports", url: "/reports/daycare" },
-          { title: "SK Reports", url: "/reports/sk" },
-          { title: "Cross-Module Analytics", url: "/reports/analytics" },
-        ],
-      },
-      {
-        title: "Announcements",
-        url: "/admin/announcements",
-        icon: Megaphone,
-      },
-      {
+        items: adminItems,
+      });
+    }
+  }
+
+  // System Settings
+  if (hasPermission('SYSTEM_SETTINGS') || hasPermission('AUDIT_LOGS') || hasPermission('BACKUP_MANAGEMENT')) {
+    const settingsItems = [];
+    
+    if (hasPermission('SYSTEM_SETTINGS')) {
+      settingsItems.push({ title: "General Settings", url: "/admin/settings" });
+    }
+    
+    if (hasPermission('BACKUP_MANAGEMENT')) {
+      settingsItems.push({ title: "Backup Management", url: "/admin/settings/backup" });
+    }
+    
+    if (hasPermission('AUDIT_LOGS')) {
+      settingsItems.push({ title: "Audit Logs", url: "/admin/settings/audit-logs" });
+    }
+    
+    if (hasPermission('BROADCAST_MANAGEMENT')) {
+      settingsItems.push({ title: "Notifications", url: "/admin/settings/notifications" });
+    }
+    
+    if (settingsItems.length > 0) {
+      navigation.main.push({
         title: "System Settings",
         url: "/admin/settings",
         icon: Settings,
-        items: [
-          { title: "General Settings", url: "/admin/settings" },
-          ...(isSystemAdmin ? [
-            { title: "Backup Management", url: "/admin/settings/backup" },
-            { title: "Audit Logs", url: "/admin/settings/audit-logs" }
-          ] : []),
-          { title: "Notifications", url: "/admin/settings/notifications" },
-        ],
-      }
-    );
-    navigation.quickActions.push(
-      { name: "Approve User", url: "/admin/users/pending", icon: UserCheck },
-      { name: "View Reports", url: "/reports", icon: FileSpreadsheet },
-      ...(isSystemAdmin ? [{ name: "System Backup", url: "/admin/settings/backup", icon: Database }] : [])
-    );
+        items: settingsItems,
+      });
+    }
   }
 
-  // Health Services (BHW & BHW Coordinator)
-  if (hasRole('BHW') || hasRole('BHW_COORDINATOR')) {
-    const isCoordinator = hasRole('BHW_COORDINATOR');
+  // Announcements
+  if (hasPermission('ANNOUNCEMENTS')) {
+    navigation.main.push({
+      title: "Announcements",
+      url: "/admin/announcements",
+      icon: Megaphone,
+    });
+  }
+
+  // Health Services
+  if (hasPermission('HEALTH_DASHBOARD')) {
+    const healthItems = [{ title: "Dashboard", url: "/health" }];
+    
+    if (hasPermission('PATIENT_MANAGEMENT')) {
+      healthItems.push({ title: "Patient Management", url: "/health/patients" });
+    }
+    
+    if (hasPermission('APPOINTMENTS')) {
+      healthItems.push({ title: "Appointments", url: "/health/appointments" });
+    }
+    
+    if (hasPermission('HEALTH_RECORDS')) {
+      healthItems.push({ title: "Health Records", url: "/health/records" });
+    }
+    
+    if (hasPermission('VACCINATIONS')) {
+      healthItems.push({ title: "Vaccinations", url: "/health/vaccinations" });
+    }
+    
+
     
     navigation.main.push({
       title: "Health Services",
       url: "/health",
       icon: Heart,
-      items: [
-        { title: "Dashboard", url: "/health" },
-        { title: "Patient Management", url: "/health/patients" },
-        { title: "Appointments", url: "/health/appointments" },
-        { title: "Immunization Cards", url: "/health/records" },
-        { title: "Certificates", url: "/health/certificates" },
-      ],
+      items: healthItems,
     });
-
-    if (isCoordinator) {
-      navigation.main.push({
-        title: "Health Reports",
-        url: "/reports/health",
-        icon: FileText,
-        items: [
-          { title: "Health Reports", url: "/reports/health" },
-          { title: "Statistics", url: "/reports/health/stats" },
-        ],
-      });
-    }
-
-    navigation.quickActions.push(
-      { name: "Add Patient", url: "/health/patients", icon: Users },
-      { name: "Schedule Appointment", url: "/health/appointments", icon: Calendar },
-      { name: "Record Immunization", url: "/health/records", icon: Syringe }
-    );
   }
 
-  // Daycare Services (Daycare Staff & Teacher)
-  if (hasRole('DAYCARE_STAFF') || hasRole('DAYCARE_TEACHER')) {
+  // My Health Records (for patients/residents)
+  if (hasPermission('MY_HEALTH_RECORDS')) {
+    navigation.main.push({
+      title: "My Health Records",
+      url: "/health/my-records",
+      icon: Heart,
+      items: [
+        { title: "Immunization Records", url: "/health/my-records" },
+      ],
+    });
+  }
+
+  // Daycare Services
+  if (hasPermission('DAYCARE_DASHBOARD')) {
+    const daycareItems = [{ title: "Dashboard", url: "/daycare" }];
+    
+    if (hasPermission('STUDENT_REGISTRATIONS')) {
+      daycareItems.push({ title: "Registrations", url: "/daycare/registrations" });
+    }
+    
+    if (hasPermission('ATTENDANCE_TRACKING')) {
+      daycareItems.push({ title: "Attendance", url: "/daycare/attendance" });
+    }
+    
+    if (hasPermission('PROGRESS_REPORTS')) {
+      daycareItems.push({ title: "Progress Reports", url: "/daycare/progress-reports" });
+    }
+    
+    if (hasPermission('LEARNING_MATERIALS')) {
+      daycareItems.push({ title: "Learning Materials", url: "/daycare/materials" });
+    }
+    
+    if (hasPermission('DAYCARE_CERTIFICATES')) {
+      daycareItems.push({ title: "Certificates", url: "/daycare/certificates" });
+    }
+    
     navigation.main.push({
       title: "Daycare Management",
       url: "/daycare",
       icon: Baby,
-      items: [
-        { title: "Dashboard", url: "/daycare" },
-        { title: "Registrations", url: "/daycare/registrations" },
-        { title: "Attendance", url: "/daycare/attendance" },
-        { title: "Progress Reports", url: "/daycare/progress-reports" },
-        { title: "Learning Materials", url: "/daycare/materials" },
-      ],
+      items: daycareItems,
     });
-
-    navigation.quickActions.push(
-      { name: "Mark Attendance", url: "/daycare/attendance", icon: ClipboardList },
-      { name: "Upload Materials", url: "/daycare/materials", icon: BookOpen },
-      { name: "Progress Report", url: "/daycare/progress-reports", icon: GraduationCap }
-    );
   }
 
-  // SK Services (SK Officer & Chairman)
-  if (hasRole('SK_OFFICER') || hasRole('SK_CHAIRMAN')) {
-    const isChairman = hasRole('SK_CHAIRMAN');
+  // Child Registration (for parents)
+  if (hasPermission('CHILD_REGISTRATION')) {
+    navigation.main.push({
+      title: "Daycare Services",
+      url: "/daycare/registration",
+      icon: Baby,
+      items: [
+        { title: "Child Registration", url: "/daycare/registration" },
+        { title: "My Children's Progress", url: "/daycare/progress" },
+        { title: "Educational Resources", url: "/daycare/resources" },
+      ],
+    });
+  }
 
+  // Educational Resources (separate access)
+  if (hasPermission('EDUCATIONAL_RESOURCES')) {
+    navigation.main.push({
+      title: "Educational Resources",
+      url: "/daycare/resources",
+      icon: BookOpen,
+    });
+  }
+
+  // SK Services
+  if (hasPermission('SK_DASHBOARD') || hasPermission('EVENT_REGISTRATION') || hasPermission('MY_EVENT_REGISTRATIONS')) {
+    const skItems = [];
+    
+    if (hasPermission('SK_DASHBOARD')) {
+      skItems.push({ title: "Dashboard", url: "/sk" });
+    }
+    
+    if (hasPermission('EVENT_MANAGEMENT')) {
+      skItems.push({ title: "Event Management", url: "/sk/events" });
+    }
+    
+    if (hasPermission('EVENT_REGISTRATION')) {
+      skItems.push({ title: "Event Registration", url: "/sk/event-registration" });
+    }
+    
+    if (hasPermission('MY_EVENT_REGISTRATIONS')) {
+      skItems.push({ title: "My Registrations", url: "/events/my-registrations" });
+    }
+    
+    if (hasPermission('ATTENDANCE_ANALYTICS')) {
+      skItems.push({ title: "Attendance Tracking", url: "/sk/attendance" });
+    }
+    
+    if (hasPermission('SK_ANALYTICS')) {
+      skItems.push({ title: "Analytics", url: "/sk/analytics" });
+    }
+    
+    if (hasPermission('SK_CERTIFICATES')) {
+      skItems.push({ title: "Certificates", url: "/sk/certificates" });
+    }
+    
     navigation.main.push({
       title: "SK Engagement",
-      url: "/sk",
+      url: hasPermission('SK_DASHBOARD') ? "/sk" : (hasPermission('EVENT_REGISTRATION') ? "/sk/event-registration" : "/events/my-registrations"),
       icon: PartyPopper,
-      items: [
-        { title: "Dashboard", url: "/sk" },
-        { title: "Event Management", url: "/sk/events" },
-        { title: "Event Registration", url: "/sk/event-registration" },
-        { title: "Attendance Tracking", url: "/sk/attendance" },
-      ],
+      items: skItems,
     });
+  }
 
-    if (isChairman) {
-      navigation.main.push({
-        title: "SK Analytics",
-        url: "/sk/analytics",
-        icon: TrendingUp,
-        items: [
-          { title: "Participation Analytics", url: "/sk/analytics" },
-          { title: "Reports", url: "/reports/sk" },
-        ],
-      });
+  // Reports & Analytics
+  if (hasPermission('REPORTS_DASHBOARD')) {
+    const reportItems = [{ title: "Dashboard", url: "/reports" }];
+    
+    if (hasPermission('HEALTH_REPORTS')) {
+      reportItems.push({ title: "Health Reports", url: "/reports/health" });
     }
-
-    navigation.quickActions.push(
-      { name: "Create Event", url: "/sk/events", icon: Calendar },
-      { name: "Track Attendance", url: "/sk/attendance", icon: UserCheck }
-    );
-  }
-
-  // Parent/Resident Services
-  if (hasRole('PARENT_RESIDENT')) {
-    navigation.main.push(
-      {
-        title: "My Health Records",
-        url: "/health/my-records",
-        icon: Heart,
-        items: [
-          { title: "Immunization Records", url: "/health/my-records" },
-        ],
-      },
-      {
-        title: "Daycare Services",
-        url: "/daycare",
-        icon: Baby,
-        items: [
-          { title: "Child Registration", url: "/daycare/registration" },
-          { title: "My Children's Progress", url: "/daycare/progress" },
-          { title: "Educational Resources", url: "/daycare/resources" },
-        ],
-      },
-      {
-        title: "Events",
-        url: "/events",
-        icon: Calendar,
-        items: [
-          { title: "Browse Events", url: "/events/public" },
-          { title: "My Registrations", url: "/events/my-registrations" },
-        ],
-      }
-    );
-
-    navigation.quickActions.push(
-      { name: "Register Child", url: "/daycare/registration", icon: Baby },
-      { name: "View Progress", url: "/daycare/progress", icon: GraduationCap },
-      { name: "Browse Events", url: "/events/public", icon: Calendar }
-    );
-  }
-
-  // Patient Services (if user has patient record)
-  if (hasPatientRecord) {
+    
+    if (hasPermission('DAYCARE_REPORTS')) {
+      reportItems.push({ title: "Daycare Reports", url: "/reports/daycare" });
+    }
+    
+    if (hasPermission('SK_REPORTS')) {
+      reportItems.push({ title: "SK Reports", url: "/reports/sk" });
+    }
+    
+    if (hasPermission('CROSS_MODULE_ANALYTICS')) {
+      reportItems.push({ title: "Cross-Module Analytics", url: "/reports/analytics" });
+    }
+    
+    if (hasPermission('HEALTH_STATS')) {
+      reportItems.push({ title: "Health Statistics", url: "/reports/health/stats" });
+    }
+    
     navigation.main.push({
-      title: "My Health",
-      url: "/health",
-      icon: Heart,
-      items: [
-        { title: "My Appointments", url: "/health/appointments" },
-        { title: "Immunization Cards", url: "/health/records" },
-        { title: "Immunization E-Card", url: "/health/certificates" },
-      ],
+      title: "Reports & Analytics",
+      url: "/reports",
+      icon: BarChart3,
+      items: reportItems,
     });
-
-    navigation.quickActions.push(
-      { name: "View Appointments", url: "/health/appointments", icon: Calendar },
-      { name: "Immunization Cards", url: "/health/records", icon: FileText }
-    );
   }
 
-  // Public Services (always available - skip announcements for admins since they have manage announcements)
-  if (!isAdmin && !isSingleRoleAdmin) {
-    navigation.main.push(
-      {
-        title: "Announcements",
-        url: "/announcements",
-        icon: Megaphone,
-      }
-    );
+  // Public Services
+  if (hasPermission('PUBLIC_ANNOUNCEMENTS')) {
+    navigation.main.push({
+      title: "Announcements",
+      url: "/announcements",
+      icon: Megaphone,
+    });
+  }
+
+  if (hasPermission('PUBLIC_EVENTS')) {
+    navigation.main.push({
+      title: "Public Events",
+      url: "/events/public",
+      icon: Calendar,
+    });
   }
 
   // Deduplicate main navigation items by title, merging subitems if they exist
@@ -308,10 +339,16 @@ export function MultiRoleSidebar({ ...props }: React.ComponentProps<typeof Sideb
     lastName: "User"
   };
 
-  // Get multi-role navigation
+  // Get multi-role navigation with permissions
   const userRoles = user.roles || [user.role || "VISITOR"];
+  const userPermissions = user.permissions || [];
   const hasPatientRecord = user.hasPatientRecord || false;
-  const navigation = getMultiRoleNavigation(userRoles, hasPatientRecord);
+  
+  // Debug logging
+  console.log('User roles:', userRoles);
+  console.log('User permissions:', userPermissions);
+  
+  const navigation = getMultiRoleNavigation(userRoles, userPermissions, hasPatientRecord);
 
   const userData = {
     name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Guest User',

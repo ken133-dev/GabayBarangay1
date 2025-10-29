@@ -20,14 +20,6 @@ export default function HealthDashboard() {
       navigate('/login');
       return;
     }
-    // Get user roles (support both single role and multi-role)
-    const userRoles = user.roles || (user.role ? [user.role] : []);
-    
-    // Allow admin users to access health dashboard
-    if (!userRoles.some(role => ['BHW', 'BHW_COORDINATOR', 'SYSTEM_ADMIN', 'BARANGAY_CAPTAIN', 'BARANGAY_OFFICIAL'].includes(role))) {
-      navigate('/dashboard');
-      return;
-    }
     fetchHealthStats();
   }, [user, navigate]);
 

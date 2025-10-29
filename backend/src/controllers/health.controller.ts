@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import prisma from '../utils/prisma';
+import { generateCertificatePDF } from '../utils/certificateGenerator';
 
 // ========== PATIENT MANAGEMENT ==========
 
@@ -704,5 +705,45 @@ export const getCertificates = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Get certificates error:', error);
     res.status(500).json({ error: 'Failed to fetch certificates' });
+  }
+};
+
+export const downloadCertificate = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const certificate = await prisma.certificate.findUnique({
+      where: { id },
+      include: {
+        patient: true
+      }
+    });
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'Certificate not found' });
+    }
+
+    const data = certificate.certificateData as any;
+    const certificateData = {
+      recipientName: certificate.recipientName,
+      certificateType: certificate.certificateType,
+      issuedFor: certificate.issuedFor,
+      issuedDate: certificate.issuedDate.toISOString(),
+      issuedBy: certificate.issuedBy,
+      certificateNumber: data?.certificateNumber,
+      purpose: data?.purpose,
+      achievements: data?.findings,
+      recommendations: data?.recommendations,
+      patientInfo: certificate.patient
+    };
+
+    const pdfBuffer = await generateCertificatePDF(certificateData);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="certificate-${certificate.recipientName.replace(/\s+/g, '-')}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Download certificate error:', error);
+    res.status(500).json({ error: 'Failed to generate certificate' });
   }
 };

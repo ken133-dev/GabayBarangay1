@@ -13,6 +13,7 @@ import {
 import {
   Users, Calendar, TrendingUp, Award, Download, ArrowLeft, PartyPopper
 } from 'lucide-react';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 
 interface SKAnalytics {
   summary: {
@@ -63,8 +64,36 @@ export default function SKAnalytics() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting SK analytics to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!analytics) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting SK analytics:', analytics);
+      const exportData = [
+        { metric: 'Total Events', value: analytics.summary.totalEvents, category: 'Overview' },
+        { metric: 'Total Participants', value: analytics.summary.totalParticipants, category: 'Overview' },
+        { metric: 'Average Attendance (%)', value: analytics.summary.averageAttendance.toFixed(1), category: 'Performance' },
+        { metric: 'Completed Events', value: analytics.summary.completedEvents, category: 'Overview' },
+        { metric: 'Engagement Score', value: analytics.engagement.engagementScore, category: 'Performance' },
+        { metric: 'Repeat Participants', value: analytics.engagement.repeatParticipants, category: 'Engagement' },
+        { metric: 'New Participants', value: analytics.engagement.newParticipants, category: 'Engagement' }
+      ];
+
+      const columns = ['Metric', 'Value', 'Category'];
+
+      if (format === 'pdf') {
+        exportToPDF(exportData, 'SK Analytics - Gabay Barangay', columns);
+        toast.success('SK analytics exported to PDF successfully!');
+      } else {
+        exportToExcel(exportData, 'SK Analytics');
+        toast.success('SK analytics exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {

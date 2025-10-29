@@ -13,6 +13,7 @@ import {
 import {
   Heart, Users, Activity, TrendingUp, Calendar, ArrowLeft, Download
 } from 'lucide-react';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 
 interface HealthStats {
   overview: {
@@ -63,7 +64,38 @@ export default function HealthStats() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting health statistics to ${format.toUpperCase()}...`);
+    if (!stats) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting health stats:', stats);
+      const exportData = [
+        { metric: 'Total Patients', value: stats.overview.totalPatients, category: 'Overview' },
+        { metric: 'Total Appointments', value: stats.overview.totalAppointments, category: 'Overview' },
+        { metric: 'Completed Appointments', value: stats.overview.completedAppointments, category: 'Overview' },
+        { metric: 'Total Vaccinations', value: stats.overview.totalVaccinations, category: 'Overview' },
+        { metric: 'Completion Rate (%)', value: stats.overview.completionRate.toFixed(1), category: 'Performance' },
+        { metric: 'Avg Wait Time (min)', value: stats.overview.avgWaitTime, category: 'Performance' },
+        { metric: 'Patient Satisfaction', value: stats.overview.patientSatisfaction, category: 'Performance' },
+        { metric: 'No-Show Rate (%)', value: stats.overview.noShowRate, category: 'Performance' },
+        { metric: 'Efficiency Score (%)', value: stats.overview.efficiencyScore, category: 'Performance' }
+      ];
+
+      const columns = ['Metric', 'Value', 'Category'];
+
+      if (format === 'pdf') {
+        exportToPDF(exportData, 'Health Statistics - Gabay Barangay', columns);
+        toast.success('Health statistics exported to PDF successfully!');
+      } else {
+        exportToExcel(exportData, 'Health Statistics');
+        toast.success('Health statistics exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {
@@ -129,6 +161,10 @@ export default function HealthStats() {
             <Button variant="outline" onClick={() => handleExport('pdf')}>
               <Download className="h-4 w-4 mr-2" />
               Export PDF
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('excel')}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
             </Button>
           </div>
         </div>

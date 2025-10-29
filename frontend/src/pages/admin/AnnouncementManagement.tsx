@@ -35,17 +35,9 @@ export default function AnnouncementManagement() {
   });
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles = user.roles || [user.role || 'VISITOR'];
-  const isAdmin = userRoles.some((role: string) => ['SYSTEM_ADMIN', 'BARANGAY_CAPTAIN'].includes(role));
-
   useEffect(() => {
-    if (!isAdmin) {
-      navigate('/dashboard');
-      return;
-    }
     fetchAnnouncements();
-  }, [isAdmin, navigate]);
+  }, []);
 
   const fetchAnnouncements = async () => {
     try {

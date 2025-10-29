@@ -794,13 +794,34 @@ export const createRole = async (req: AuthRequest, res: Response) => {
     if (existingRole) {
       return res.status(400).json({ error: 'Role with this name already exists' });
     }
+    // Navigation permissions for sidebar visibility
+    const validPermissions = [
+      // Administrative
+      'ADMIN_DASHBOARD', 'USER_MANAGEMENT', 'ROLE_MANAGEMENT', 'SYSTEM_SETTINGS', 'AUDIT_LOGS', 'BACKUP_MANAGEMENT', 'ANNOUNCEMENTS', 'BROADCAST_MANAGEMENT',
+      // Health Services
+      'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'CERTIFICATES', 'MY_HEALTH_RECORDS',
+      // Daycare Services
+      'DAYCARE_DASHBOARD', 'CHILD_REGISTRATION', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS', 'EDUCATIONAL_RESOURCES',
+      // SK Engagement
+      'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'EVENT_REGISTRATION', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS', 'MY_EVENT_REGISTRATIONS',
+      // Reports & Analytics
+      'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'DAYCARE_REPORTS', 'SK_REPORTS', 'CROSS_MODULE_ANALYTICS', 'HEALTH_STATS',
+      // Public Access
+      'PUBLIC_ANNOUNCEMENTS', 'PUBLIC_EVENTS'
+    ];
+    
+    const filteredPermissions = permissions.filter((p: string) => validPermissions.includes(p));
+    console.log('Create role - Original permissions:', permissions);
+    console.log('Create role - Filtered permissions:', filteredPermissions);
 
     const role = await prisma.role.create({
       data: {
         name,
         displayName,
         description,
-        permissions: permissions as any[]
+        permissions: {
+          set: filteredPermissions
+        }
       },
       include: {
         users: {
@@ -853,11 +874,45 @@ export const updateRole = async (req: AuthRequest, res: Response) => {
     const updateData: any = {};
     if (displayName !== undefined) updateData.displayName = displayName;
     if (description !== undefined) updateData.description = description;
-    if (permissions !== undefined) updateData.permissions = permissions;
+    if (permissions !== undefined) {
+      console.log('Raw permissions received:', JSON.stringify(permissions));
+      console.log('Permissions type:', typeof permissions);
+      console.log('Is array:', Array.isArray(permissions));
+      
+      // Ensure permissions is an array
+      const permissionsArray = Array.isArray(permissions) ? permissions : [];
+      
+      // Navigation permissions for sidebar visibility
+      const validPermissions = [
+        // Administrative
+        'ADMIN_DASHBOARD', 'USER_MANAGEMENT', 'ROLE_MANAGEMENT', 'SYSTEM_SETTINGS', 'AUDIT_LOGS', 'BACKUP_MANAGEMENT', 'ANNOUNCEMENTS', 'BROADCAST_MANAGEMENT',
+        // Health Services
+        'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'MY_HEALTH_RECORDS',
+        // Daycare Services
+        'DAYCARE_DASHBOARD', 'CHILD_REGISTRATION', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS', 'EDUCATIONAL_RESOURCES', 'DAYCARE_CERTIFICATES',
+        // SK Engagement
+        'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'EVENT_REGISTRATION', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS', 'MY_EVENT_REGISTRATIONS', 'SK_CERTIFICATES',
+        // Reports & Analytics
+        'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'DAYCARE_REPORTS', 'SK_REPORTS', 'CROSS_MODULE_ANALYTICS', 'HEALTH_STATS',
+        // Public Access
+        'PUBLIC_ANNOUNCEMENTS', 'PUBLIC_EVENTS'
+      ];
+      
+      const filteredPermissions = permissionsArray.filter((p: string) => validPermissions.includes(p));
+      console.log('Filtered permissions:', JSON.stringify(filteredPermissions));
+      
+      // Force permissions to be an array, not an object
+      updateData.permissions = {
+        set: filteredPermissions
+      };
+    }
     if (isActive !== undefined && !existingRole.isSystem) {
       // Only allow changing active status for non-system roles
       updateData.isActive = isActive;
     }
+
+    console.log('Final updateData:', JSON.stringify(updateData));
+    console.log('Permissions in updateData:', updateData.permissions);
 
     const role = await prisma.role.update({
       where: { id: roleId },
@@ -945,47 +1000,40 @@ export const deleteRole = async (req: AuthRequest, res: Response) => {
 
 export const getPermissions = async (req: AuthRequest, res: Response) => {
   try {
-    // Get all permissions from the enum
+    // Navigation permissions for sidebar visibility
     const permissions = [
-      // User Management
-      { name: 'USER_CREATE', category: 'User Management', description: 'Create new user accounts' },
-      { name: 'USER_READ', category: 'User Management', description: 'View user information' },
-      { name: 'USER_UPDATE', category: 'User Management', description: 'Update user information' },
-      { name: 'USER_DELETE', category: 'User Management', description: 'Delete user accounts' },
-      { name: 'USER_SUSPEND', category: 'User Management', description: 'Suspend/unsuspend users' },
-      { name: 'USER_APPROVE', category: 'User Management', description: 'Approve pending user accounts' },
-      
-      // Role Management
-      { name: 'ROLE_CREATE', category: 'Role Management', description: 'Create new roles' },
-      { name: 'ROLE_READ', category: 'Role Management', description: 'View roles and permissions' },
-      { name: 'ROLE_UPDATE', category: 'Role Management', description: 'Update role permissions' },
-      { name: 'ROLE_DELETE', category: 'Role Management', description: 'Delete roles' },
+      // Administrative
+      { name: 'ADMIN_DASHBOARD', category: 'Administrative', description: 'Access admin dashboard' },
+      { name: 'USER_MANAGEMENT', category: 'Administrative', description: 'Access user management' },
+      { name: 'ROLE_MANAGEMENT', category: 'Administrative', description: 'Access role management' },
       
       // Health Services
-      { name: 'PATIENT_CREATE', category: 'Health Services', description: 'Create patient records' },
-      { name: 'PATIENT_READ', category: 'Health Services', description: 'View patient information' },
-      { name: 'PATIENT_UPDATE', category: 'Health Services', description: 'Update patient records' },
-      { name: 'PATIENT_DELETE', category: 'Health Services', description: 'Delete patient records' },
-      { name: 'APPOINTMENT_MANAGE', category: 'Health Services', description: 'Manage appointments' },
-      { name: 'IMMUNIZATION_MANAGE', category: 'Health Services', description: 'Manage immunization records' },
+      { name: 'HEALTH_SERVICES', category: 'Health Services', description: 'Access health services menu' },
+      { name: 'PATIENT_MANAGEMENT', category: 'Health Services', description: 'Access patient management' },
+      { name: 'APPOINTMENTS', category: 'Health Services', description: 'Access appointments' },
+      { name: 'IMMUNIZATION_RECORDS', category: 'Health Services', description: 'Access immunization records' },
       
-      // Daycare Management
-      { name: 'DAYCARE_STUDENT_MANAGE', category: 'Daycare Management', description: 'Manage daycare students' },
-      { name: 'DAYCARE_ATTENDANCE_MANAGE', category: 'Daycare Management', description: 'Manage attendance records' },
-      { name: 'DAYCARE_REPORTS', category: 'Daycare Management', description: 'Generate daycare reports' },
+      // Daycare Services
+      { name: 'DAYCARE_SERVICES', category: 'Daycare Services', description: 'Access daycare services menu' },
+      { name: 'DAYCARE_STUDENTS', category: 'Daycare Services', description: 'Access daycare students' },
+      { name: 'DAYCARE_ATTENDANCE', category: 'Daycare Services', description: 'Access daycare attendance' },
+      { name: 'DAYCARE_REPORTS', category: 'Daycare Services', description: 'Access daycare reports' },
       
-      // SK Management
-      { name: 'EVENT_MANAGE', category: 'SK Management', description: 'Create and manage events' },
-      { name: 'EVENT_ATTENDANCE', category: 'SK Management', description: 'Manage event attendance' },
+      // SK Engagement
+      { name: 'SK_ENGAGEMENT', category: 'SK Engagement', description: 'Access SK engagement menu' },
+      { name: 'SK_EVENTS', category: 'SK Engagement', description: 'Access SK events' },
+      { name: 'SK_ATTENDANCE', category: 'SK Engagement', description: 'Access SK attendance' },
+      
+      // Reports & Analytics
+      { name: 'REPORTS_ANALYTICS', category: 'Reports & Analytics', description: 'Access reports and analytics' },
       
       // System Administration
-      { name: 'SYSTEM_SETTINGS', category: 'System Administration', description: 'Manage system settings' },
-      { name: 'AUDIT_LOGS', category: 'System Administration', description: 'View audit logs' },
-      { name: 'ANNOUNCEMENTS_MANAGE', category: 'System Administration', description: 'Manage announcements' },
+      { name: 'SYSTEM_SETTINGS', category: 'System Administration', description: 'Access system settings' },
+      { name: 'AUDIT_LOGS', category: 'System Administration', description: 'Access audit logs' },
+      { name: 'ANNOUNCEMENTS', category: 'System Administration', description: 'Access announcements' },
       
-      // Reports
-      { name: 'REPORTS_VIEW', category: 'Reports', description: 'View system reports' },
-      { name: 'REPORTS_GENERATE', category: 'Reports', description: 'Generate reports' }
+      // Public Access
+      { name: 'PUBLIC_ACCESS', category: 'Public Access', description: 'Access public pages' }
     ];
 
     res.json({ permissions });

@@ -12,6 +12,7 @@ import {
 import {
   Baby, Users, TrendingUp, CheckCircle, Clock, Download, ArrowLeft
 } from 'lucide-react';
+import { exportDaycareReportToPDF, exportDaycareReportToExcel } from '@/lib/exportUtils';
 
 interface DaycareReport {
   summary: {
@@ -69,8 +70,24 @@ export default function DaycareReports() {
   };
 
   const handleExport = (format: 'pdf' | 'excel') => {
-    toast.info(`Exporting daycare report to ${format.toUpperCase()}...`);
-    // TODO: Implement export functionality
+    if (!report) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    try {
+      console.log('Exporting daycare report:', report); // Debug log
+      if (format === 'pdf') {
+        exportDaycareReportToPDF(report);
+        toast.success('Daycare report exported to PDF successfully!');
+      } else {
+        exportDaycareReportToExcel(report);
+        toast.success('Daycare report exported to Excel successfully!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export to ${format.toUpperCase()}. Check console for details.`);
+    }
   };
 
   if (loading) {
