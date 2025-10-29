@@ -2,73 +2,77 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { lazy, Suspense } from 'react';
 
-// Auth & Main Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import YouthRegistration from './pages/YouthRegistration';
-import Dashboard from './pages/Dashboard';
-import ForgotPassword from './pages/ForgotPassword';
-import Profile from './pages/Profile';
-import Notifications from './pages/Notifications';
-import NotificationPreferences from './pages/NotificationPreferences';
+// Loading component
+const Loading = () => <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+
+// Lazy load components
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const YouthRegistration = lazy(() => import('./pages/YouthRegistration'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const NotificationPreferences = lazy(() => import('./pages/NotificationPreferences'));
 
 // Health Services Module
-import HealthDashboard from './pages/health/HealthDashboard';
-import PatientManagement from './pages/health/PatientManagement';
-import AppointmentScheduling from './pages/health/AppointmentScheduling';
-import HealthRecords from './pages/health/HealthRecords';
-import VaccinationTracking from './pages/health/VaccinationTracking';
-import CertificateGenerator from './pages/health/CertificateGenerator';
-import MyHealthRecords from './pages/health/MyHealthRecords';
+const HealthDashboard = lazy(() => import('./pages/health/HealthDashboard'));
+const PatientManagement = lazy(() => import('./pages/health/PatientManagement'));
+const AppointmentScheduling = lazy(() => import('./pages/health/AppointmentScheduling'));
+const HealthRecords = lazy(() => import('./pages/health/HealthRecords'));
+const VaccinationTracking = lazy(() => import('./pages/health/VaccinationTracking'));
+const CertificateGenerator = lazy(() => import('./pages/health/CertificateGenerator'));
+const MyHealthRecords = lazy(() => import('./pages/health/MyHealthRecords'));
 
 // Daycare Module
-import DaycareDashboard from './pages/daycare/DaycareDashboard';
-import ChildRegistrationForm from './pages/daycare/ChildRegistrationForm';
-import StudentRegistration from './pages/daycare/StudentRegistration';
-import AttendanceTracking from './pages/daycare/AttendanceTracking';
-import MyChildrenProgress from './pages/daycare/MyChildrenProgress';
-import ProgressReports from './pages/daycare/ProgressReports';
-import EducationalResources from './pages/daycare/EducationalResources';
-import LearningMaterials from './pages/daycare/LearningMaterials';
-import DaycareCertificateGenerator from './pages/daycare/CertificateGenerator';
+const DaycareDashboard = lazy(() => import('./pages/daycare/DaycareDashboard'));
+const ChildRegistrationForm = lazy(() => import('./pages/daycare/ChildRegistrationForm'));
+const StudentRegistration = lazy(() => import('./pages/daycare/StudentRegistration'));
+const AttendanceTracking = lazy(() => import('./pages/daycare/AttendanceTracking'));
+const MyChildrenProgress = lazy(() => import('./pages/daycare/MyChildrenProgress'));
+const ProgressReports = lazy(() => import('./pages/daycare/ProgressReports'));
+const EducationalResources = lazy(() => import('./pages/daycare/EducationalResources'));
+const LearningMaterials = lazy(() => import('./pages/daycare/LearningMaterials'));
+const DaycareCertificateGenerator = lazy(() => import('./pages/daycare/CertificateGenerator'));
 
 // SK Engagement Module
-import SKDashboard from './pages/sk/SKDashboard';
-import EventManagement from './pages/sk/EventManagement';
-import EventDetails from './pages/sk/EventDetails';
-import EventRegistration from './pages/sk/EventRegistration';
-import MyEventRegistrations from './pages/sk/MyEventRegistrations';
-import AttendanceAnalytics from './pages/sk/AttendanceAnalytics';
-import SKAnalytics from './pages/sk/SKAnalytics';
-import SKCertificateGenerator from './pages/sk/CertificateGenerator';
+const SKDashboard = lazy(() => import('./pages/sk/SKDashboard'));
+const EventManagement = lazy(() => import('./pages/sk/EventManagement'));
+const EventDetails = lazy(() => import('./pages/sk/EventDetails'));
+const EventRegistration = lazy(() => import('./pages/sk/EventRegistration'));
+const MyEventRegistrations = lazy(() => import('./pages/sk/MyEventRegistrations'));
+const AttendanceAnalytics = lazy(() => import('./pages/sk/AttendanceAnalytics'));
+const SKAnalytics = lazy(() => import('./pages/sk/SKAnalytics'));
+const SKCertificateGenerator = lazy(() => import('./pages/sk/CertificateGenerator'));
 
 // Admin Module
-import AdminDashboard from './pages/admin/AdminDashboard';
-import UserManagement from './pages/admin/UserManagement';
-import PendingApprovals from './pages/admin/PendingApprovals';
-import SystemSettings from './pages/admin/SystemSettings';
-import AuditLogs from './pages/admin/AuditLogs';
-import AnnouncementManagement from './pages/admin/AnnouncementManagement';
-import RoleManagement from './pages/admin/RoleManagement';
-import BackupManagement from './pages/admin/BackupManagement';
-import BroadcastManagement from './pages/admin/BroadcastManagement';
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
+const PendingApprovals = lazy(() => import('./pages/admin/PendingApprovals'));
+const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
+const AnnouncementManagement = lazy(() => import('./pages/admin/AnnouncementManagement'));
+const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
+const BackupManagement = lazy(() => import('./pages/admin/BackupManagement'));
+const BroadcastManagement = lazy(() => import('./pages/admin/BroadcastManagement'));
 
 // Public Pages
-import Homepage from './pages/public/Homepage';
-import PublicEvents from './pages/public/PublicEvents';
-import Announcements from './pages/public/Announcements';
-import Contact from './pages/public/Contact';
-import Services from './pages/public/Services';
-import AboutBarangay from './pages/public/AboutBarangay';
+const Homepage = lazy(() => import('./pages/public/Homepage'));
+const PublicEvents = lazy(() => import('./pages/public/PublicEvents'));
+const Announcements = lazy(() => import('./pages/public/Announcements'));
+const Contact = lazy(() => import('./pages/public/Contact'));
+const Services = lazy(() => import('./pages/public/Services'));
+const AboutBarangay = lazy(() => import('./pages/public/AboutBarangay'));
 
 // Reports Module
-import ReportsDashboard from './pages/reports/ReportsDashboard';
-import HealthReports from './pages/reports/HealthReports';
-import DaycareReports from './pages/reports/DaycareReports';
-import SKReports from './pages/reports/SKReports';
-import CrossModuleAnalytics from './pages/reports/CrossModuleAnalytics';
-import HealthStats from './pages/reports/HealthStats';
+const ReportsDashboard = lazy(() => import('./pages/reports/ReportsDashboard'));
+const HealthReports = lazy(() => import('./pages/reports/HealthReports'));
+const DaycareReports = lazy(() => import('./pages/reports/DaycareReports'));
+const SKReports = lazy(() => import('./pages/reports/SKReports'));
+const CrossModuleAnalytics = lazy(() => import('./pages/reports/CrossModuleAnalytics'));
+const HealthStats = lazy(() => import('./pages/reports/HealthStats'));
 
 
 function App() {
@@ -76,7 +80,8 @@ function App() {
     <ThemeProvider>
       <Router>
         <AuthProvider>
-          <Routes>
+          <Suspense fallback={<Loading />}>
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Homepage />} />
             <Route path="/events/public" element={<PublicEvents />} />
@@ -320,7 +325,8 @@ function App() {
 
             {/* Catch all - redirect to homepage */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </Router>
     </ThemeProvider>
