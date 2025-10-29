@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { api } from '@/lib/api';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { MessageSquare } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -14,7 +15,7 @@ interface Notification {
   title: string;
   message: string;
   isRead: boolean;
-  createdAt: string;
+  sentAt: string;
   relatedId?: string;
   relatedType?: string;
 }
@@ -24,7 +25,6 @@ import type { User } from '@/types/index';
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
@@ -105,34 +105,37 @@ export default function Notifications() {
 
   const getNotificationIcon = (type: string) => {
     const icons: Record<string, string> = {
-      INFO: 'ℹ️',
+      INFO: '💡',
       SUCCESS: '✅',
       WARNING: '⚠️',
       ERROR: '❌',
-      EVENT: '📅',
+      EVENT: '🎉',
       HEALTH: '🏥',
       DAYCARE: '👶',
       SYSTEM: '⚙️',
-      ANNOUNCEMENT: '📢'
+      ANNOUNCEMENT: '📢',
+      IN_APP: '🔔'
     };
 
-    return icons[type] || 'ℹ️';
+    return icons[type] || '📧';
   };
 
   const getTypeBadge = (type: string) => {
-    const typeColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      INFO: 'outline',
-      SUCCESS: 'default',
-      WARNING: 'secondary',
-      ERROR: 'destructive',
-      EVENT: 'secondary',
-      HEALTH: 'default',
-      DAYCARE: 'outline',
-      SYSTEM: 'secondary',
-      ANNOUNCEMENT: 'default'
+    const typeConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
+      INFO: { variant: 'outline', label: 'Info' },
+      SUCCESS: { variant: 'default', label: 'Success' },
+      WARNING: { variant: 'secondary', label: 'Warning' },
+      ERROR: { variant: 'destructive', label: 'Error' },
+      EVENT: { variant: 'secondary', label: 'Event' },
+      HEALTH: { variant: 'default', label: 'Health' },
+      DAYCARE: { variant: 'outline', label: 'Daycare' },
+      SYSTEM: { variant: 'secondary', label: 'System' },
+      ANNOUNCEMENT: { variant: 'default', label: 'Announcement' },
+      IN_APP: { variant: 'default', label: 'Notification' }
     };
 
-    return <Badge variant={typeColors[type] || 'outline'}>{type}</Badge>;
+    const config = typeConfig[type] || { variant: 'outline' as const, label: type };
+    return <Badge variant={config.variant} className="text-xs px-2 py-1">{config.label}</Badge>;
   };
 
   if (!user) {
@@ -146,168 +149,167 @@ export default function Notifications() {
     return null;
   }
 
-  const filteredNotifications = notifications.filter(n => {
-    if (filter === 'unread') return !n.isRead;
-    if (filter === 'read') return n.isRead;
-    return true;
-  });
+  const filteredNotifications = notifications;
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <DashboardLayout currentPage="/notifications">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Notifications</h1>
-          <p className="text-muted-foreground mt-1">
-            {unreadCount > 0
-              ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-              : 'All caught up!'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {unreadCount > 0 && (
-            <Button variant="outline" onClick={handleMarkAllAsRead}>
-              Mark All Read
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-2">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilter('all')}
-            >
-              All ({notifications.length})
-            </Button>
-            <Button
-              variant={filter === 'unread' ? 'default' : 'outline'}
-              onClick={() => setFilter('unread')}
-            >
-              Unread ({unreadCount})
-            </Button>
-            <Button
-              variant={filter === 'read' ? 'default' : 'outline'}
-              onClick={() => setFilter('read')}
-            >
-              Read ({notifications.length - unreadCount})
-            </Button>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Notifications</h1>
+            <p className="text-muted-foreground">
+              {unreadCount > 0
+                ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
+                : 'All caught up!'}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" onClick={handleMarkAllAsRead}>
+                Mark All Read
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Notifications List */}
-      {loading ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : filteredNotifications.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <p className="text-muted-foreground">
-                {filter === 'unread'
-                  ? 'No unread notifications'
-                  : filter === 'read'
-                  ? 'No read notifications'
-                  : 'No notifications yet'}
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-gray-600">Total Notifications</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{notifications.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-gray-600">Read</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">
+                {notifications.length - unreadCount}
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {filter === 'all' && "You'll see important updates and announcements here."}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-gray-600">Unread</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-600">
+                {unreadCount}
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredNotifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`transition-all cursor-pointer hover:shadow-md ${
-                !notification.isRead ? 'bg-primary/5 border-primary/20' : ''
-              }`}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <CardContent className="pt-6">
-                <div className="flex gap-4">
-                  <div className="text-3xl shrink-0">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Notifications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p>Loading notifications...</p>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No notifications yet</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  You'll see important updates and announcements here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredNotifications.map((notification) => (
+                  <div key={notification.id} className="border p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleNotificationClick(notification)}>
+                    <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{notification.title}</h3>
+                          <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                          <h3 className={`font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {notification.title}
+                          </h3>
                           {!notification.isRead && (
                             <Badge variant="destructive" className="text-xs">
                               New
                             </Badge>
                           )}
                         </div>
-                        {getTypeBadge(notification.type)}
+                        <p className={`text-sm mb-2 line-clamp-2 ${!notification.isRead ? 'text-gray-800' : 'text-gray-600'}`}>
+                          {notification.message}
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {getTypeBadge(notification.type)}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        {!notification.isRead && (
+                      <div className="text-right ml-4">
+                        <div className="text-xs text-gray-500">
+                          {(() => {
+                            try {
+                              const date = new Date(notification.sentAt);
+                              if (isNaN(date.getTime())) {
+                                return 'Invalid date';
+                              }
+                              return date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              });
+                            } catch {
+                              return 'Invalid date';
+                            }
+                          })()}
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          {!notification.isRead && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
+                            >
+                              Mark Read
+                            </Button>
+                          )}
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleMarkAsRead(notification.id);
+                              handleDeleteNotification(notification.id);
                             }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            Mark Read
+                            Delete
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNotification(notification.id);
-                          }}
-                        >
-                          Delete
-                        </Button>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-foreground mb-2">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(notification.createdAt).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Info Card */}
-      {notifications.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-sm text-muted-foreground">
-              <p>Notifications are automatically managed by the system.</p>
-              <p>Important notifications are preserved for your reference.</p>
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+
+        {/* Info Card */}
+        {notifications.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Notifications are automatically managed by the system.</p>
+                <p>Important notifications are preserved for your reference.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </DashboardLayout>
   );
 }

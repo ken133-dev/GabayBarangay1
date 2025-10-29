@@ -1,26 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { api } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Send, MessageSquare, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Send, MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 interface BroadcastMessage {
   id: string;
   title: string;
   message: string;
-  type: 'SMS' | 'EMAIL' | 'NOTIFICATION';
   targetRoles: string[];
   status: 'DRAFT' | 'SENT' | 'SCHEDULED' | 'FAILED';
   sentAt?: string;
-  scheduledAt?: string;
   recipientCount: number;
   deliveredCount: number;
   createdBy: string;
@@ -49,11 +45,8 @@ export default function BroadcastManagement() {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    type: 'NOTIFICATION',
-    targetRoles: [] as string[],
-    scheduledAt: ''
+    targetRoles: [] as string[]
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMessages();
@@ -63,7 +56,7 @@ export default function BroadcastManagement() {
     try {
       const response = await api.get('/admin/broadcast-messages');
       setMessages(response.data.messages || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch broadcast messages');
     } finally {
       setLoading(false);
@@ -89,21 +82,18 @@ export default function BroadcastManagement() {
     setSending(true);
     try {
       await api.post('/admin/broadcast-messages', {
-        ...formData,
-        scheduledAt: formData.scheduledAt || null
+        ...formData
       });
       toast.success('Broadcast message sent successfully');
       setShowDialog(false);
       setFormData({
         title: '',
         message: '',
-        type: 'NOTIFICATION',
-        targetRoles: [],
-        scheduledAt: ''
+        targetRoles: []
       });
       fetchMessages();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to send broadcast message');
+    } catch {
+      toast.error('Failed to send broadcast message');
     } finally {
       setSending(false);
     }
@@ -117,15 +107,6 @@ export default function BroadcastManagement() {
       FAILED: 'destructive'
     } as const;
     return <Badge variant={variants[status as keyof typeof variants]}>{status}</Badge>;
-  };
-
-  const getTypeBadge = (type: string) => {
-    const variants = {
-      SMS: 'outline',
-      EMAIL: 'secondary',
-      NOTIFICATION: 'default'
-    } as const;
-    return <Badge variant={variants[type as keyof typeof variants]}>{type}</Badge>;
   };
 
   const getStatusIcon = (status: string) => {
@@ -223,7 +204,6 @@ export default function BroadcastManagement() {
                         </div>
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">{message.message}</p>
                         <div className="flex gap-2 flex-wrap">
-                          {getTypeBadge(message.type)}
                           {getStatusBadge(message.status)}
                           {message.targetRoles.map((role) => (
                             <Badge key={role} variant="outline" className="text-xs">
@@ -239,9 +219,6 @@ export default function BroadcastManagement() {
                         <div className="text-xs text-gray-500">
                           {message.status === 'SENT' && message.sentAt && (
                             <>Sent: {new Date(message.sentAt).toLocaleString()}</>
-                          )}
-                          {message.status === 'SCHEDULED' && message.scheduledAt && (
-                            <>Scheduled: {new Date(message.scheduledAt).toLocaleString()}</>
                           )}
                           {message.status === 'DRAFT' && (
                             <>Created: {new Date(message.createdAt).toLocaleString()}</>
@@ -282,29 +259,6 @@ export default function BroadcastManagement() {
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Type</label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NOTIFICATION">In-App Notification</SelectItem>
-                      <SelectItem value="EMAIL">Email</SelectItem>
-                      <SelectItem value="SMS">SMS</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Schedule (Optional)</label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.scheduledAt}
-                    onChange={(e) => setFormData({...formData, scheduledAt: e.target.value})}
-                  />
-                </div>
-              </div>
               <div>
                 <label className="text-sm font-medium">Target Roles *</label>
                 <div className="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto border p-3 rounded-md">
@@ -331,7 +285,7 @@ export default function BroadcastManagement() {
                 </Button>
                 <Button type="submit" disabled={sending}>
                   <Send className="h-4 w-4 mr-2" />
-                  {sending ? 'Sending...' : formData.scheduledAt ? 'Schedule' : 'Send Now'}
+                  {sending ? 'Sending...' : 'Send Now'}
                 </Button>
               </div>
             </form>

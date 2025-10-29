@@ -1219,17 +1219,11 @@ export const getBroadcastMessages = async (req: AuthRequest, res: Response) => {
 
 export const createBroadcastMessage = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, message, type, targetRoles, scheduledAt } = req.body;
+    const { title, message, targetRoles } = req.body;
 
     // Validate required fields
     if (!title || !message || !targetRoles || !Array.isArray(targetRoles) || targetRoles.length === 0) {
       return res.status(400).json({ error: 'Title, message, and target roles are required' });
-    }
-
-    // Validate type
-    const validTypes = ['SMS', 'EMAIL', 'NOTIFICATION'];
-    if (!validTypes.includes(type)) {
-      return res.status(400).json({ error: 'Invalid message type' });
     }
 
     // Count recipients
@@ -1247,22 +1241,14 @@ export const createBroadcastMessage = async (req: AuthRequest, res: Response) =>
     const createData: any = {
       title,
       message,
-      type,
       targetRoles,
-      status: scheduledAt ? 'SCHEDULED' : 'SENT',
+      type: 'NOTIFICATION',
+      status: 'SENT',
       recipientCount,
-      deliveredCount: 0,
-      createdBy: req.user!.userId
+      deliveredCount: recipientCount,
+      createdBy: req.user!.userId,
+      sentAt: new Date()
     };
-
-    if (scheduledAt) {
-      createData.scheduledAt = new Date(scheduledAt);
-    } else {
-      createData.sentAt = new Date();
-      // For immediate sends, mark as delivered (simplified - in real app would send notifications)
-      createData.deliveredCount = recipientCount;
-      createData.status = 'SENT';
-    }
 
     const broadcastMessage = await prisma.broadcastMessage.create({
       data: createData,
@@ -1276,6 +1262,39 @@ export const createBroadcastMessage = async (req: AuthRequest, res: Response) =>
       }
     });
 
+    // Get all users matching target roles and create notifications
+    const where: any = {
+      roles: {
+        some: {
+          name: { in: targetRoles }
+        }
+      },
+      status: 'ACTIVE'
+    };
+
+    const targetUsers = await prisma.user.findMany({
+      where,
+      select: { id: true }
+    });
+
+    // Create notifications for all target users
+    const notifications = await Promise.all(
+      targetUsers.map(user =>
+        prisma.notification.create({
+          data: {
+            userId: user.id,
+            type: 'IN_APP',
+            title,
+            message,
+            metadata: {
+              broadcastId: broadcastMessage.id,
+              isBroadcast: true
+            }
+          }
+        })
+      )
+    );
+
     // Log the action
     await prisma.auditLog.create({
       data: {
@@ -1283,7 +1302,7 @@ export const createBroadcastMessage = async (req: AuthRequest, res: Response) =>
         action: `Created broadcast message: ${title}`,
         entityType: 'BROADCAST',
         entityId: broadcastMessage.id,
-        changes: { type, targetRoles, recipientCount }
+        changes: { targetRoles, recipientCount: notifications.length }
       }
     });
 
@@ -1292,18 +1311,16 @@ export const createBroadcastMessage = async (req: AuthRequest, res: Response) =>
       id: broadcastMessage.id,
       title: broadcastMessage.title,
       message: broadcastMessage.message,
-      type: broadcastMessage.type,
       targetRoles: broadcastMessage.targetRoles,
       status: broadcastMessage.status,
       sentAt: broadcastMessage.sentAt,
-      scheduledAt: broadcastMessage.scheduledAt,
       recipientCount: broadcastMessage.recipientCount,
       deliveredCount: broadcastMessage.deliveredCount,
       createdBy: `${broadcastMessage.sender.firstName} ${broadcastMessage.sender.lastName}`,
       createdAt: broadcastMessage.createdAt
     };
 
-    res.status(201).json({ message: transformedMessage, success: 'Broadcast message created successfully' });
+    res.status(201).json({ message: transformedMessage, success: 'Broadcast message sent successfully' });
   } catch (error) {
     console.error('Create broadcast message error:', error);
     res.status(500).json({ error: 'Failed to create broadcast message' });
