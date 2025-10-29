@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ requiresOTP: boolean }>;
   logout: () => void;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterFormData) => Promise<void>;
   updateUser: (user: User) => void;
   sendOTP: (email: string) => Promise<void>;
   verifyOTP: (email: string, otp: string) => Promise<void>;
@@ -24,6 +24,8 @@ interface RegisterData {
   address?: string;
   role?: string;
 }
+
+type RegisterFormData = RegisterData | FormData;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -82,8 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/login');
   };
 
-  const register = async (data: RegisterData) => {
-    await api.post('/auth/register', data);
+  const register = async (data: RegisterFormData) => {
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {};
+    
+    await api.post('/auth/register', data, config);
     // Don't auto-login after registration since account needs approval
   };
 

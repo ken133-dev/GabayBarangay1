@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,26 @@ import {
   Clock,
   Eye,
   EyeOff,
-  Phone
+  Phone,
+  Upload,
+  FileText
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Register() {
+  const navigate = useNavigate();
+  
+  // Redirect to youth registration page immediately
+  React.useEffect(() => {
+    navigate('/register/youth');
+  }, [navigate]);
+  
+  return null; // This component will redirect immediately
+}
+
+// Keep the old component as RegisterOld for reference
+function RegisterOld() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -33,6 +47,7 @@ export default function Register() {
     password: '',
     confirmPassword: ''
   });
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,16 +70,23 @@ export default function Register() {
       return;
     }
 
+    if (!proofFile) {
+      toast.error('Proof of residency is required');
+      return;
+    }
+
     setLoading(true);
     try {
-      await registerUser({
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        contactNumber: formData.contactNumber,
-        role: 'PARENT_RESIDENT' // Default role for self-registration
-      });
+      const formDataToSend = new FormData();
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('contactNumber', formData.contactNumber);
+      formDataToSend.append('role', 'PARENT_RESIDENT');
+      formDataToSend.append('proofOfResidency', proofFile);
+
+      await registerUser(formDataToSend);
 
       toast.success('Registration successful!', {
         description: 'Your account is pending approval. You will be notified once activated.'
@@ -351,6 +373,41 @@ export default function Register() {
                     )}
                   </Button>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="proofOfResidency" className="text-sm font-medium">
+                  Proof of Residency *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="proofOfResidency"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error('File size must be less than 5MB');
+                          return;
+                        }
+                        setProofFile(file);
+                      }
+                    }}
+                    className="pl-10"
+                    required
+                  />
+                  <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Upload barangay certificate, utility bill, or other proof of residency (JPG, PNG, PDF - Max 5MB)
+                </p>
+                {proofFile && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>{proofFile.name}</span>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground">

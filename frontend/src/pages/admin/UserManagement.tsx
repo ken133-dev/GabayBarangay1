@@ -37,6 +37,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -57,8 +58,42 @@ import {
   MapPin,
   Calendar,
   UserPlus,
+  FileText,
+  ExternalLink,
+  User,
+  GraduationCap,
+  Heart,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+
+interface YouthProfile {
+  purokZone: string;
+  barangay: string;
+  cityMunicipality: string;
+  province: string;
+  region: string;
+  birthday: string;
+  age: number;
+  sex: string;
+  civilStatus: string;
+  religion: string;
+  youthAgeGroup: string;
+  youthClassification: string[];
+  educationalBackground: string;
+  workStatus: string;
+  registeredSkVoter: boolean;
+  registeredNationalVoter: boolean;
+  votedLastSkElection: boolean;
+  attendedSkAssembly: boolean;
+  assemblyAttendanceCount?: string;
+  notAttendedReason?: string;
+  lgbtqCommunity: boolean;
+  youthSpecificNeeds: string[];
+  soloParent: boolean;
+  sports: string[];
+  sportsOtherSpecify?: string;
+  hobbies: string[];
+}
 
 interface User {
   id: string;
@@ -66,12 +101,17 @@ interface User {
   firstName: string;
   lastName: string;
   middleName?: string;
+  suffix?: string;
   contactNumber?: string;
   address?: string;
+  proofOfResidency?: string;
   role?: string;
   roles?: string[];
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'INACTIVE';
   otpEnabled?: boolean;
+  consentAgreed?: boolean;
+  consentDate?: string;
+  profile?: YouthProfile;
   createdAt: string;
   updatedAt?: string;
 }
@@ -651,6 +691,12 @@ export default function UserManagement() {
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
+                            {user.proofOfResidency && (
+                              <DropdownMenuItem onClick={() => window.open(`${import.meta.env.VITE_BASE_URL}${user.proofOfResidency}`, '_blank')}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                View Proof of Residency
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => handleEditUser(user)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit User
@@ -695,8 +741,8 @@ export default function UserManagement() {
 
         {/* View User Details Dialog */}
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
                 User Details
@@ -706,97 +752,346 @@ export default function UserManagement() {
               </DialogDescription>
             </DialogHeader>
             {selectedUser && (
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Full Name</Label>
-                    <p className="text-sm">{selectedUser.firstName} {selectedUser.lastName}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Email</Label>
-                    <p className="text-sm">{selectedUser.email}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Contact Number</Label>
-                    <p className="text-sm flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      {selectedUser.contactNumber || 'Not provided'}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Status</Label>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(selectedUser.status)}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex-1 overflow-hidden">
+                <Tabs defaultValue="personal" className="h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+                    <TabsTrigger value="personal" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Personal Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="demographic" className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      Demographics
+                    </TabsTrigger>
+                    <TabsTrigger value="interests" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" />
+                      Interests
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="flex-1 overflow-y-auto mt-4">
+                    <TabsContent value="personal" className="space-y-6 mt-0">
+                      {/* Basic Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Full Name</Label>
+                          <p className="text-sm">
+                            {selectedUser.firstName} {selectedUser.middleName} {selectedUser.lastName} {selectedUser.suffix}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Email</Label>
+                          <p className="text-sm">{selectedUser.email}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Contact Number</Label>
+                          <p className="text-sm flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            {selectedUser.contactNumber || 'Not provided'}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Status</Label>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(selectedUser.status)}
+                          </div>
+                        </div>
+                      </div>
 
-                <Separator />
+                      <Separator />
 
-                {/* Roles */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Roles</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUser.roles ? (
-                      selectedUser.roles.map((role, idx) => (
-                        <Badge key={idx} variant="secondary" className="flex items-center gap-1">
-                          <Shield className="h-3 w-3" />
-                          {role.replace(/_/g, ' ')}
-                        </Badge>
-                      ))
-                    ) : (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        {selectedUser.role || 'Unknown'}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Address */}
-                {selectedUser.address && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Address</Label>
-                      <p className="text-sm flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {selectedUser.address}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Account Information */}
-                <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Account Created</Label>
-                    <p className="text-sm flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(selectedUser.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Two-Factor Authentication</Label>
-                    <div className="flex items-center gap-2">
-                      {selectedUser.otpEnabled ? (
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          Enabled
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          Disabled
-                        </Badge>
+                      {/* Address */}
+                      {(selectedUser.address || selectedUser.profile) && (
+                        <>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Address</Label>
+                            {selectedUser.profile ? (
+                              <p className="text-sm flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                {selectedUser.profile.purokZone}, {selectedUser.profile.barangay}, {selectedUser.profile.cityMunicipality}, {selectedUser.profile.province}, {selectedUser.profile.region}
+                              </p>
+                            ) : selectedUser.address ? (
+                              <p className="text-sm flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                {selectedUser.address}
+                              </p>
+                            ) : null}
+                          </div>
+                          <Separator />
+                        </>
                       )}
-                    </div>
+
+                      {/* Roles */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Roles</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedUser.roles ? (
+                            selectedUser.roles.map((role, idx) => (
+                              <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                                <Shield className="h-3 w-3" />
+                                {role.replace(/_/g, ' ')}
+                              </Badge>
+                            ))
+                          ) : (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              {selectedUser.role || 'Unknown'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Proof of Residency */}
+                      {selectedUser.proofOfResidency && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Proof of Residency</Label>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(`${import.meta.env.VITE_BASE_URL}${selectedUser.proofOfResidency}`, '_blank')}
+                                className="flex items-center gap-2"
+                              >
+                                <FileText className="h-4 w-4" />
+                                View Document
+                                <ExternalLink className="h-3 w-3" />
+                              </Button>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Uploaded
+                              </Badge>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Account Information */}
+                      <Separator />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Account Created</Label>
+                          <p className="text-sm flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(selectedUser.createdAt)}
+                          </p>
+                        </div>
+                        {selectedUser.updatedAt && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Last Updated</Label>
+                            <p className="text-sm flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {formatDate(selectedUser.updatedAt)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Consent Information */}
+                      {selectedUser.consentAgreed && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Consent Information</Label>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                Consent Agreed
+                              </Badge>
+                              {selectedUser.consentDate && (
+                                <span className="text-sm text-muted-foreground">
+                                  on {new Date(selectedUser.consentDate).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="demographic" className="space-y-6 mt-0">
+                      {selectedUser.profile ? (
+                        <>
+                          {/* Personal Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Birthday & Age</Label>
+                              <p className="text-sm">
+                                {new Date(selectedUser.profile.birthday).toLocaleDateString()} ({selectedUser.profile.age} years old)
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Sex</Label>
+                              <p className="text-sm">{selectedUser.profile.sex}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Civil Status</Label>
+                              <p className="text-sm">{selectedUser.profile.civilStatus}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Religion</Label>
+                              <p className="text-sm">{selectedUser.profile.religion}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Youth Age Group</Label>
+                              <p className="text-sm">{selectedUser.profile.youthAgeGroup}</p>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Youth Classification */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Youth Classification</Label>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedUser.profile.youthClassification.length > 0 ? (
+                                selectedUser.profile.youthClassification.map((classification, idx) => (
+                                  <Badge key={idx} variant="outline">{classification}</Badge>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">None specified</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Education & Work */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Educational Background</Label>
+                              <p className="text-sm">{selectedUser.profile.educationalBackground}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Work Status</Label>
+                              <p className="text-sm">{selectedUser.profile.workStatus}</p>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Voter Information */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Voter Information</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>SK Voter: <Badge variant={selectedUser.profile.registeredSkVoter ? 'default' : 'secondary'}>
+                                {selectedUser.profile.registeredSkVoter ? 'Yes' : 'No'}
+                              </Badge></div>
+                              <div>National Voter: <Badge variant={selectedUser.profile.registeredNationalVoter ? 'default' : 'secondary'}>
+                                {selectedUser.profile.registeredNationalVoter ? 'Yes' : 'No'}
+                              </Badge></div>
+                              <div>Voted Last SK: <Badge variant={selectedUser.profile.votedLastSkElection ? 'default' : 'secondary'}>
+                                {selectedUser.profile.votedLastSkElection ? 'Yes' : 'No'}
+                              </Badge></div>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* SK Assembly Attendance */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">SK Assembly Attendance</Label>
+                            <div className="text-sm">
+                              <div>Attended: <Badge variant={selectedUser.profile.attendedSkAssembly ? 'default' : 'secondary'}>
+                                {selectedUser.profile.attendedSkAssembly ? 'Yes' : 'No'}
+                              </Badge></div>
+                              {selectedUser.profile.attendedSkAssembly && selectedUser.profile.assemblyAttendanceCount && (
+                                <div className="mt-1">Frequency: {selectedUser.profile.assemblyAttendanceCount}</div>
+                              )}
+                              {!selectedUser.profile.attendedSkAssembly && selectedUser.profile.notAttendedReason && (
+                                <div className="mt-1">Reason: {selectedUser.profile.notAttendedReason}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Special Categories */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">LGBTQ+ Community</Label>
+                              <Badge variant={selectedUser.profile.lgbtqCommunity ? 'default' : 'secondary'}>
+                                {selectedUser.profile.lgbtqCommunity ? 'Yes' : 'No'}
+                              </Badge>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Solo Parent</Label>
+                              <Badge variant={selectedUser.profile.soloParent ? 'default' : 'secondary'}>
+                                {selectedUser.profile.soloParent ? 'Yes' : 'No'}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Youth with Specific Needs */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Youth with Specific Needs</Label>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedUser.profile.youthSpecificNeeds.length > 0 ? (
+                                selectedUser.profile.youthSpecificNeeds.map((need, idx) => (
+                                  <Badge key={idx} variant="outline">{need}</Badge>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">None</span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <GraduationCap className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-muted-foreground">No demographic information available</p>
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="interests" className="space-y-6 mt-0">
+                      {selectedUser.profile ? (
+                        <>
+                          {/* Sports Interests */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Sports Interests</Label>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedUser.profile.sports.length > 0 ? (
+                                <>
+                                  {selectedUser.profile.sports.map((sport, idx) => (
+                                    <Badge key={idx} variant="outline">{sport}</Badge>
+                                  ))}
+                                  {selectedUser.profile.sportsOtherSpecify && (
+                                    <Badge variant="outline">{selectedUser.profile.sportsOtherSpecify}</Badge>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">None specified</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Hobbies */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Hobbies</Label>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedUser.profile.hobbies.length > 0 ? (
+                                selectedUser.profile.hobbies.map((hobby, idx) => (
+                                  <Badge key={idx} variant="outline">{hobby}</Badge>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">None specified</span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Heart className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-muted-foreground">No interests information available</p>
+                        </div>
+                      )}
+                    </TabsContent>
                   </div>
-                </div>
+                </Tabs>
               </div>
             )}
           </DialogContent>
@@ -804,25 +1099,21 @@ export default function UserManagement() {
 
         {/* Edit User Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="flex items-center gap-2">
-                <Edit className="h-5 w-5" />
-                Edit User
-              </DialogTitle>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
               <DialogDescription>
-                Update user information and permissions
+                Update user information and roles
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6 overflow-y-auto flex-1 pr-2">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
                     id="firstName"
                     value={editFormData.firstName}
-                    onChange={(e) => setEditFormData({...editFormData, firstName: e.target.value})}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -830,290 +1121,172 @@ export default function UserManagement() {
                   <Input
                     id="lastName"
                     value={editFormData.lastName}
-                    onChange={(e) => setEditFormData({...editFormData, lastName: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contactNumber">Contact Number</Label>
-                  <Input
-                    id="contactNumber"
-                    value={editFormData.contactNumber}
-                    onChange={(e) => setEditFormData({...editFormData, contactNumber: e.target.value})}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   />
                 </div>
               </div>
-
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactNumber">Contact Number</Label>
+                <Input
+                  id="contactNumber"
+                  value={editFormData.contactNumber}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
                   value={editFormData.address}
-                  onChange={(e) => setEditFormData({...editFormData, address: e.target.value})}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
                 />
               </div>
-
-              <Separator />
-
-              {/* Roles */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Roles</Label>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="system-admin-toggle" className="text-sm font-medium text-muted-foreground">
-                      System Admin
-                    </Label>
-                    <Switch
-                      id="system-admin-toggle"
-                      checked={editFormData.roles.includes('SYSTEM_ADMIN')}
-                      onCheckedChange={() => handleRoleToggle('SYSTEM_ADMIN')}
-                    />
-                    {editFormData.roles.includes('SYSTEM_ADMIN') && (
-                      <Badge variant="secondary" className="text-xs">
-                        All Roles
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
-                    <Card key={category} className="p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <IconComponent className="h-4 w-4 text-muted-foreground" />
-                        <Badge variant={variant} className="text-xs">
-                          {category}
-                        </Badge>
+              <div className="space-y-2">
+                <Label>Roles</Label>
+                <div className="space-y-2">
+                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles }]) => (
+                    <div key={category} className="space-y-1">
+                      <Label className="text-sm font-medium text-muted-foreground">{category}</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {roles.map(role => (
+                          <div key={role} className="flex items-center space-x-2">
+                            <Switch
+                              id={role}
+                              checked={editFormData.roles.includes(role)}
+                              onCheckedChange={() => handleRoleToggle(role)}
+                            />
+                            <Label htmlFor={role} className="text-sm">
+                              {role.replace(/_/g, ' ')}
+                            </Label>
+                          </div>
+                        ))}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {roles.filter(role => role !== 'SYSTEM_ADMIN').map(role => {
-                          const isSelected = editFormData.roles.includes(role);
-                          
-                          return (
-                            <div 
-                              key={role} 
-                              className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
-                                isSelected 
-                                  ? 'bg-primary/10 border border-primary/20' 
-                                  : 'hover:bg-muted/50'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                id={role}
-                                checked={isSelected}
-                                onChange={() => handleRoleToggle(role)}
-                                className="rounded border-input"
-                              />
-                              <Label 
-                                htmlFor={role} 
-                                className={`text-sm cursor-pointer ${
-                                  isSelected ? 'font-medium text-primary' : ''
-                                }`}
-                              >
-                                {role.replace(/_/g, ' ')}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>
-
-              <Separator />
-
-              {/* Two-Factor Authentication */}
-              {/* <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable SMS-based two-factor authentication for this user
-                  </p>
-                </div>
+              <div className="flex items-center space-x-2">
                 <Switch
+                  id="otpEnabled"
                   checked={editFormData.otpEnabled}
-                  onCheckedChange={(checked) => setEditFormData({...editFormData, otpEnabled: checked})}
+                  onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, otpEnabled: checked }))}
                 />
-              </div> */}
-
-            </div>
-            <div className="flex justify-end gap-3 flex-shrink-0 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateUser}>
-                Update User
-              </Button>
+                <Label htmlFor="otpEnabled">Enable OTP Authentication</Label>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateUser}>
+                  Update User
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
 
         {/* Add User Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Add New User
-              </DialogTitle>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
-                Create a new user account with specified roles and permissions
+                Create a new user account with roles
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6 overflow-y-auto flex-1 pr-2">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="addFirstName">First Name *</Label>
+                  <Label htmlFor="addFirstName">First Name</Label>
                   <Input
                     id="addFirstName"
                     value={addFormData.firstName}
-                    onChange={(e) => setAddFormData({...addFormData, firstName: e.target.value})}
-                    required
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="addLastName">Last Name *</Label>
+                  <Label htmlFor="addLastName">Last Name</Label>
                   <Input
                     id="addLastName"
                     value={addFormData.lastName}
-                    onChange={(e) => setAddFormData({...addFormData, lastName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addEmail">Email *</Label>
-                  <Input
-                    id="addEmail"
-                    type="email"
-                    value={addFormData.email}
-                    onChange={(e) => setAddFormData({...addFormData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addContactNumber">Contact Number</Label>
-                  <Input
-                    id="addContactNumber"
-                    value={addFormData.contactNumber}
-                    onChange={(e) => setAddFormData({...addFormData, contactNumber: e.target.value})}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   />
                 </div>
               </div>
-
+              <div className="space-y-2">
+                <Label htmlFor="addEmail">Email</Label>
+                <Input
+                  id="addEmail"
+                  type="email"
+                  value={addFormData.email}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="addContactNumber">Contact Number</Label>
+                <Input
+                  id="addContactNumber"
+                  value={addFormData.contactNumber}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="addAddress">Address</Label>
                 <Input
                   id="addAddress"
                   value={addFormData.address}
-                  onChange={(e) => setAddFormData({...addFormData, address: e.target.value})}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, address: e.target.value }))}
                 />
               </div>
-
-              <Separator />
-
-              {/* Roles */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Roles *</Label>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="add-system-admin-toggle" className="text-sm font-medium text-muted-foreground">
-                      System Admin
-                    </Label>
-                    <Switch
-                      id="add-system-admin-toggle"
-                      checked={addFormData.roles.includes('SYSTEM_ADMIN')}
-                      onCheckedChange={() => handleAddRoleToggle('SYSTEM_ADMIN')}
-                    />
-                    {addFormData.roles.includes('SYSTEM_ADMIN') && (
-                      <Badge variant="secondary" className="text-xs">
-                        All Roles
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles, variant, icon: IconComponent }]) => (
-                    <Card key={category} className="p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <IconComponent className="h-4 w-4 text-muted-foreground" />
-                        <Badge variant={variant} className="text-xs">
-                          {category}
-                        </Badge>
+              <div className="space-y-2">
+                <Label>Roles</Label>
+                <div className="space-y-2">
+                  {Object.entries(ROLE_HIERARCHY).map(([category, { roles }]) => (
+                    <div key={category} className="space-y-1">
+                      <Label className="text-sm font-medium text-muted-foreground">{category}</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {roles.map(role => (
+                          <div key={role} className="flex items-center space-x-2">
+                            <Switch
+                              id={`add-${role}`}
+                              checked={addFormData.roles.includes(role)}
+                              onCheckedChange={() => handleAddRoleToggle(role)}
+                            />
+                            <Label htmlFor={`add-${role}`} className="text-sm">
+                              {role.replace(/_/g, ' ')}
+                            </Label>
+                          </div>
+                        ))}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {roles.filter(role => role !== 'SYSTEM_ADMIN').map(role => {
-                          const isSelected = addFormData.roles.includes(role);
-                          
-                          return (
-                            <div 
-                              key={role} 
-                              className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
-                                isSelected 
-                                  ? 'bg-primary/10 border border-primary/20' 
-                                  : 'hover:bg-muted/50'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                id={`add-${role}`}
-                                checked={isSelected}
-                                onChange={() => handleAddRoleToggle(role)}
-                                className="rounded border-input"
-                              />
-                              <Label 
-                                htmlFor={`add-${role}`} 
-                                className={`text-sm cursor-pointer ${
-                                  isSelected ? 'font-medium text-primary' : ''
-                                }`}
-                              >
-                                {role.replace(/_/g, ' ')}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>
-
-              <Separator />
-
-              {/* Two-Factor Authentication */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable SMS-based two-factor authentication for this user
-                  </p>
-                </div>
+              <div className="flex items-center space-x-2">
                 <Switch
+                  id="addOtpEnabled"
                   checked={addFormData.otpEnabled}
-                  onCheckedChange={(checked) => setAddFormData({...addFormData, otpEnabled: checked})}
+                  onCheckedChange={(checked) => setAddFormData(prev => ({ ...prev, otpEnabled: checked }))}
                 />
+                <Label htmlFor="addOtpEnabled">Enable OTP Authentication</Label>
               </div>
-
-            </div>
-            <div className="flex justify-end gap-3 flex-shrink-0 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddUser}
-                disabled={!addFormData.firstName || !addFormData.lastName || !addFormData.email || addFormData.roles.length === 0}
-              >
-                Create User
-              </Button>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddUser}>
+                  Create User
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

@@ -140,13 +140,20 @@ model User {
   firstName     String
   lastName      String
   middleName    String?
+  suffix        String?
   contactNumber String?
   address       String?
+  proofOfResidency String?     // File path/URL for proof of residency document
   roles         Role[]        @relation("UserRoles") // Changed from UserRole[] enum
   status        AccountStatus @default(PENDING)
   otpEnabled    Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  
+  // KK Profiling data
+  profile       YouthProfile?
+  consentAgreed Boolean       @default(false)
+  consentDate   DateTime?
 
   // Relations
   patients              Patient[]
@@ -576,6 +583,57 @@ model ServiceFeature {
   updatedAt   DateTime @updatedAt
 
   @@map("service_features")
+}
+
+// ========== YOUTH PROFILING ==========
+
+model YouthProfile {
+  id                        String   @id @default(cuid())
+  userId                    String   @unique
+  user                      User     @relation(fields: [userId], references: [id])
+  
+  // Address Details
+  purokZone                 String
+  barangay                  String
+  cityMunicipality          String
+  province                  String
+  region                    String
+  
+  // Personal Details
+  birthday                  DateTime
+  age                       Int
+  sex                       String   // Female, Male
+  civilStatus               String   // Single, Married, Widowed, Separated, Annulled, Live-in
+  religion                  String
+  
+  // Demographic Characteristics
+  youthAgeGroup             String   // Child Youth (15-17 yrs old), Core Youth (18-24 yrs old), Young Adult (25-30 yrs old)
+  youthClassification       String[] // In-school youth, Out of school youth, Working Youth, Teenage Parent
+  educationalBackground     String
+  workStatus                String   // Employed, Unemployed, Self-employed, Currently looking for a job, Not interested in looking for a job
+  
+  // Voter Information
+  registeredSkVoter         Boolean
+  registeredNationalVoter   Boolean
+  votedLastSkElection       Boolean
+  attendedSkAssembly        Boolean
+  assemblyAttendanceCount   String?  // 1-2 times, 3-4 times, 5 and above
+  notAttendedReason         String?  // There was no KK Assembly, Meeting, Not interested to attend
+  
+  // Identity
+  lgbtqCommunity            Boolean
+  youthSpecificNeeds        String[] // Person w/ Disability, Children in conflict w/ law, Indigenous People
+  soloParent                Boolean  @default(false)
+  
+  // Interests
+  sports                    String[] // Basketball, Volleyball, Badminton, Other's
+  sportsOtherSpecify        String?
+  hobbies                   String[] // Dancing, Arts & Crafts, News Writing/Photography/Cartoonist, Cooking/Baking
+  
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@map("youth_profiles")
 }
 
 // ========== SYSTEM ADMINISTRATION ==========
