@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { Heart, Baby, Trophy, Eye, EyeOff, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { TermsModal } from '@/components/TermsModal';
+import { PrivacyModal } from '@/components/PrivacyModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,6 +20,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const navigate = useNavigate();
   const { login, sendOTP: sendLoginOTP, verifyOTP: verifyLoginOTP } = useAuth();
 
@@ -296,10 +300,27 @@ export default function Login() {
           </CardContent>
         </Card>
         <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  mt-4">
-          By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-          and <a href="#">Privacy Policy</a>.
+          By clicking continue, you agree to our{" "}
+          <button 
+            type="button"
+            onClick={() => setShowTerms(true)}
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Terms of Service
+          </button>{" "}
+          and{" "}
+          <button 
+            type="button"
+            onClick={() => setShowPrivacy(true)}
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Privacy Policy
+          </button>.
         </div>
       </div>
+      
+      <TermsModal open={showTerms} onOpenChange={setShowTerms} />
+      <PrivacyModal open={showPrivacy} onOpenChange={setShowPrivacy} />
     </div>
   )
 }
