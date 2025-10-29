@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 // Auth & Main Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import YouthRegistration from './pages/YouthRegistration';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
@@ -87,6 +88,7 @@ function App() {
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register/youth" element={<YouthRegistration />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Protected User Routes */}

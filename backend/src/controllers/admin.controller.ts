@@ -191,22 +191,29 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
           select: {
             name: true
           }
-        }
+        },
+        profile: true
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Transform users to include role names as strings
+    // Transform users to include role names as strings and profile data
     const transformedUsers = users.map(user => ({
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      middleName: user.middleName,
+      suffix: user.suffix,
       contactNumber: user.contactNumber,
       address: user.address,
+      proofOfResidency: user.proofOfResidency,
       status: user.status,
+      consentAgreed: user.consentAgreed,
+      consentDate: user.consentDate,
       createdAt: user.createdAt,
-      roles: user.roles.map(r => r.name)
+      roles: user.roles.map(r => r.name),
+      profile: user.profile
     }));
 
     res.json({ users: transformedUsers });
@@ -437,7 +444,8 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
           select: {
             name: true
           }
-        }
+        },
+        profile: true
       }
     });
 
@@ -445,7 +453,7 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Transform user to include role names as strings
+    // Transform user to include role names as strings and profile data
     const transformedUser = {
       ...user,
       roles: user.roles.map(r => r.name)

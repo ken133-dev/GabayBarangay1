@@ -3,6 +3,40 @@ import prisma from '../utils/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { sendOTP, verifyOTP } from '../services/otp.service';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/proof-of-residency';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `proof-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+export const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and PDF files are allowed'));
+    }
+  }
+});
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -12,9 +46,12 @@ export const register = async (req: Request, res: Response) => {
       firstName,
       lastName,
       middleName,
+      suffix,
       contactNumber,
       address,
-      role
+      role,
+      consentAgreed,
+      profile
     } = req.body;
 
     // Check if user already exists
@@ -29,7 +66,29 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user (roles will be assigned by admin)
+    // Handle proof of residency file upload
+    const proofOfResidency = (req as any).file ? `/uploads/proof-of-residency/${(req as any).file.filename}` : null;
+
+    // Parse profile data if provided
+    let profileData = null;
+    if (profile) {
+      try {
+        profileData = JSON.parse(profile);
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid profile data' });
+      }
+    }
+
+    // Get PARENT_RESIDENT role
+    const parentResidentRole = await prisma.role.findUnique({
+      where: { name: 'PARENT_RESIDENT' }
+    });
+
+    if (!parentResidentRole) {
+      return res.status(500).json({ error: 'PARENT_RESIDENT role not found' });
+    }
+
+    // Create user with profile data and assign role
     const user = await prisma.user.create({
       data: {
         email,
@@ -37,9 +96,46 @@ export const register = async (req: Request, res: Response) => {
         firstName,
         lastName,
         middleName,
+        suffix,
         contactNumber,
         address,
-        status: 'PENDING' // Account needs approval
+        proofOfResidency,
+        consentAgreed: consentAgreed === 'true',
+        consentDate: consentAgreed === 'true' ? new Date() : null,
+        status: 'PENDING', // Account needs approval
+        roles: {
+          connect: { id: parentResidentRole.id }
+        },
+        profile: profileData ? {
+          create: {
+            purokZone: profileData.purokZone,
+            barangay: profileData.barangay,
+            cityMunicipality: profileData.cityMunicipality,
+            province: profileData.province,
+            region: profileData.region,
+            birthday: new Date(profileData.birthday),
+            age: profileData.age,
+            sex: profileData.sex,
+            civilStatus: profileData.civilStatus,
+            religion: profileData.religion,
+            youthAgeGroup: profileData.youthAgeGroup,
+            youthClassification: profileData.youthClassification,
+            educationalBackground: profileData.educationalBackground,
+            workStatus: profileData.workStatus,
+            registeredSkVoter: profileData.registeredSkVoter,
+            registeredNationalVoter: profileData.registeredNationalVoter,
+            votedLastSkElection: profileData.votedLastSkElection,
+            attendedSkAssembly: profileData.attendedSkAssembly,
+            assemblyAttendanceCount: profileData.assemblyAttendanceCount,
+            notAttendedReason: profileData.notAttendedReason,
+            lgbtqCommunity: profileData.lgbtqCommunity,
+            youthSpecificNeeds: profileData.youthSpecificNeeds,
+            soloParent: profileData.soloParent,
+            sports: profileData.sports,
+            sportsOtherSpecify: profileData.sportsOtherSpecify,
+            hobbies: profileData.hobbies
+          }
+        } : undefined
       }
     });
 
@@ -168,13 +264,17 @@ export const getProfile = async (req: Request, res: Response) => {
       firstName: user.firstName,
       lastName: user.lastName,
       middleName: user.middleName,
+      suffix: user.suffix,
       contactNumber: user.contactNumber,
       address: user.address,
+      proofOfResidency: user.proofOfResidency,
       role: roleNames[0] || 'VISITOR',
       roles: roleNames,
       permissions: Array.from(allPermissions),
       status: user.status,
       otpEnabled: user.otpEnabled,
+      consentAgreed: user.consentAgreed,
+      consentDate: user.consentDate,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
