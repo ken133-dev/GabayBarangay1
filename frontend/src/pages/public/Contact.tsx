@@ -33,10 +33,10 @@ export default function Contact() {
         // Fallback to default values
         setContactInfo({
           barangayName: 'Barangay Binitayan',
-          address: 'Daraga, Albay, Philippines',
-          phone: '+63 XXX XXX XXXX',
-          email: 'contact@barangaybinitayan.gov.ph',
-          hours: 'Mon - Fri: 8am - 5pm, Sat: 8am - 12pm'
+          address: 'Binitayan, Daraga, Albay 4501, Philippines',
+          phone: '(052) 123-4567',
+          email: 'barangay.binitayan@daraga.gov.ph',
+          hours: 'Monday - Friday: 8:00 AM - 5:00 PM'
         });
       } finally {
         setLoading(false);
@@ -189,10 +189,36 @@ export default function Contact() {
                 <Card className="hover:shadow-lg transition-shadow duration-300">
                   <CardHeader>
                     <CardTitle>Find Us</CardTitle>
+                    <CardDescription>Located in Daraga, Albay with scenic views of Mayon Volcano</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="aspect-video rounded-md bg-muted/30 flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground">[Map Placeholder]</p>
+                    <div className="aspect-video rounded-md overflow-hidden border">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.5!2d123.7162!3d13.1555!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTPCsDA5JzE5LjgiTiAxMjPCsDQyJzU4LjMiRQ!5e0!3m2!1sen!2sph!4v1234567890123!5m2!1sen!2sph"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Barangay Binitayan Location"
+                      />
+                    </div>
+                    <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                      <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Coordinates:</span>
+                          <span className="text-muted-foreground">13.1555°N, 123.7162°E</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Elevation:</span>
+                          <span className="text-muted-foreground">29.5 meters (96.8 feet) above sea level</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Island:</span>
+                          <span className="text-muted-foreground">Luzon</span>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

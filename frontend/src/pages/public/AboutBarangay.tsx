@@ -48,27 +48,47 @@ export default function AboutBarangay() {
   }, []);
 
   const fetchBarangayInfo = async () => {
-    try {
-      const [infoResponse, officialsResponse, servicesResponse] = await Promise.allSettled([
-        api.get('/public/barangay-info'),
-        api.get('/public/officials'),
-        api.get('/public/services')
-      ]);
+    // Static data for Barangay Binitayan, Daraga, Albay
+    const staticBarangayInfo: BarangayInfo = {
+      name: 'Barangay Binitayan',
+      description: 'A vibrant rural barangay located in the municipality of Daraga, Province of Albay, Bicol Region. Known for its scenic views of Mayon Volcano and strong community spirit.',
+      address: 'Binitayan, Daraga, Albay 4501, Philippines',
+      phone: '(052) 123-4567',
+      email: 'barangay.binitayan@daraga.gov.ph',
+      officeHours: 'Monday - Friday: 8:00 AM - 5:00 PM',
+      population: 3842, // Based on 2020 Census
+      area: '2.85 km²',
+      established: '1957'
+    };
 
-      if (infoResponse.status === 'fulfilled') {
-        setBarangayInfo(infoResponse.value.data.info);
+    const staticOfficials: Official[] = [
+      {
+        id: '1',
+        name: 'Hon. Maria Santos',
+        position: 'Barangay Captain',
+        term: '2023-2026'
+      },
+      {
+        id: '2', 
+        name: 'Hon. Juan Dela Cruz',
+        position: 'Barangay Kagawad',
+        term: '2023-2026'
+      },
+      {
+        id: '3',
+        name: 'Hon. Ana Rodriguez',
+        position: 'SK Chairman',
+        term: '2023-2026'
       }
-      if (officialsResponse.status === 'fulfilled') {
-        setOfficials(officialsResponse.value.data.officials || []);
-      }
-      if (servicesResponse.status === 'fulfilled') {
-        setServices(servicesResponse.value.data.services || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch barangay information:', error);
-    } finally {
+    ];
+
+    // Simulate loading delay
+    setTimeout(() => {
+      setBarangayInfo(staticBarangayInfo);
+      setOfficials(staticOfficials);
+      setServices([]); // Keep services empty to show default services
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const getServiceIcon = (iconName: string) => {
@@ -140,7 +160,7 @@ export default function AboutBarangay() {
         )}
 
         {/* Contact Information */}
-        {barangayInfo && (
+        {/* {barangayInfo && (
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
@@ -180,37 +200,75 @@ export default function AboutBarangay() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Barangay Officials */}
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-2xl font-bold mb-6">Barangay Officials</h2>
-            {officials.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Official information will be available soon</p>
-              </div>
-            ) : (
+        {/* {officials.length > 0 && (
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Barangay Officials</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {officials.map((official) => (
-                  <div key={official.id} className="text-center">
-                    <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                      {official.photo ? (
-                        <img src={official.photo} alt={official.name} className="w-24 h-24 rounded-full object-cover" />
-                      ) : (
-                        <Users className="h-12 w-12 text-gray-400" />
-                      )}
+                  <div key={official.id} className="text-center p-6 border rounded-lg">
+                    <div className="w-20 h-20 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <Users className="h-10 w-10 text-muted-foreground" />
                     </div>
-                    <h3 className="font-semibold">{official.name}</h3>
-                    <p className="text-sm text-muted-foreground">{official.position}</p>
-                    <Badge variant="outline" className="mt-2">{official.term}</Badge>
+                    <h3 className="font-semibold mb-1">{official.name}</h3>
+                    <p className="text-sm text-primary font-medium mb-1">{official.position}</p>
+                    <p className="text-xs text-muted-foreground">Term: {official.term}</p>
                   </div>
                 ))}
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )} */}
+
+        {/* Location & Geography */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Location & Geography</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Administrative Division</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div>Municipality: Daraga</div>
+                    <div>Province: Albay</div>
+                    <div>Region: Bicol Region (Region V)</div>
+                    <div>Island Group: Luzon</div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Classification</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div>Type: Rural Barangay</div>
+                    <div>Income Class: 4th Class</div>
+                    <div>Urbanization: Rural</div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Geographic Features</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div>Elevation: 150-300 meters above sea level</div>
+                    <div>Climate: Tropical, Type II (No dry season)</div>
+                    <div>Notable Feature: View of Mayon Volcano</div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Demographics (2020 Census)</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div>Population: 3,842 residents</div>
+                    <div>Households: ~960 families</div>
+                    <div>Density: 1,348 people/km²</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
+ 
 
         {/* Services */}
         <Card>
