@@ -13,6 +13,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192x192.svg', 'icon-512x512.svg', 'theycare.png'],
       workbox: {
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
