@@ -163,7 +163,7 @@ export default function EventManagement() {
   };
 
   const getUniqueCategories = () => {
-    const categories = events.map(event => event.category).filter(Boolean);
+    const categories = events.map(event => event.category).filter((category): category is string => Boolean(category));
     return [...new Set(categories)];
   };
 
