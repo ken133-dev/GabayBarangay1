@@ -30,6 +30,7 @@ import MyChildrenProgress from './pages/daycare/MyChildrenProgress';
 import ProgressReports from './pages/daycare/ProgressReports';
 import EducationalResources from './pages/daycare/EducationalResources';
 import LearningMaterials from './pages/daycare/LearningMaterials';
+import DaycareCertificateGenerator from './pages/daycare/CertificateGenerator';
 
 // SK Engagement Module
 import SKDashboard from './pages/sk/SKDashboard';
@@ -39,6 +40,7 @@ import EventRegistration from './pages/sk/EventRegistration';
 import MyEventRegistrations from './pages/sk/MyEventRegistrations';
 import AttendanceAnalytics from './pages/sk/AttendanceAnalytics';
 import SKAnalytics from './pages/sk/SKAnalytics';
+import SKCertificateGenerator from './pages/sk/CertificateGenerator';
 
 // Admin Module
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -187,6 +189,11 @@ function App() {
                 <LearningMaterials />
               </ProtectedRoute>
             } />
+            <Route path="/daycare/certificates" element={
+              <ProtectedRoute>
+                <DaycareCertificateGenerator />
+              </ProtectedRoute>
+            } />
 
             {/* SK Engagement Module */}
             <Route path="/sk" element={
@@ -222,6 +229,11 @@ function App() {
             <Route path="/sk/analytics" element={
               <ProtectedRoute>
                 <SKAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/sk/certificates" element={
+              <ProtectedRoute>
+                <SKCertificateGenerator />
               </ProtectedRoute>
             } />
 

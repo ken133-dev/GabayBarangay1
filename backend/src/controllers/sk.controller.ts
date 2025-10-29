@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
+import prisma from '../utils/prisma';
+import { generateCertificatePDF } from '../utils/certificateGenerator';
 
-const prisma = new PrismaClient();
-
-export const getSKAnalytics = async (req: Request, res: Response) => {
+export const getSKAnalytics = async (req: AuthRequest, res: Response) => {
   try {
     const { range = '6months' } = req.query;
     
@@ -169,5 +169,147 @@ export const getSKAnalytics = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching SK analytics:', error);
     res.status(500).json({ error: 'Failed to fetch SK analytics' });
+  }
+};
+
+// ========== CERTIFICATE MANAGEMENT ==========
+
+export const createSKCertificate = async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      eventId,
+      userId,
+      certificateType,
+      certificateNumber,
+      purpose,
+      achievements,
+      recommendations,
+      expiryDate,
+      issuedBy
+    } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const certificate = await prisma.certificate.create({
+      data: {
+        eventId,
+        certificateType,
+        recipientName: `${user.firstName} ${user.lastName}`,
+        issuedFor: purpose || certificateType,
+        issuedBy,
+        certificateData: {
+          certificateNumber,
+          purpose,
+          achievements,
+          recommendations,
+          expiryDate: expiryDate ? new Date(expiryDate) : null,
+          userId
+        }
+      },
+      include: {
+        event: true
+      }
+    });
+
+    res.status(201).json({ message: 'Certificate generated successfully', certificate });
+  } catch (error) {
+    console.error('Create SK certificate error:', error);
+    res.status(500).json({ error: 'Failed to generate certificate' });
+  }
+};
+
+export const getSKCertificates = async (req: AuthRequest, res: Response) => {
+  try {
+    const { eventId, userId } = req.query;
+
+    let where: any = { eventId: { not: null } };
+    
+    if (eventId) {
+      where.eventId = eventId as string;
+    }
+    
+    if (userId) {
+      where.certificateData = {
+        path: ['userId'],
+        equals: userId as string
+      };
+    }
+
+    const certificates = await prisma.certificate.findMany({
+      where,
+      include: {
+        event: true
+      },
+      orderBy: { issuedDate: 'desc' }
+    });
+
+    const transformedCertificates = certificates.map(cert => {
+      const data = cert.certificateData as any;
+      return {
+        id: cert.id,
+        certificateType: cert.certificateType,
+        issuedDate: cert.issuedDate,
+        issuedBy: cert.issuedBy,
+        event: cert.event,
+        certificateNumber: data?.certificateNumber || 'N/A',
+        purpose: data?.purpose || cert.issuedFor,
+        achievements: data?.achievements,
+        recommendations: data?.recommendations,
+        expiryDate: data?.expiryDate,
+        userId: data?.userId
+      };
+    });
+
+    res.json({ certificates: transformedCertificates });
+  } catch (error) {
+    console.error('Get SK certificates error:', error);
+    res.status(500).json({ error: 'Failed to fetch certificates' });
+  }
+};
+
+export const downloadSKCertificate = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const certificate = await prisma.certificate.findUnique({
+      where: { id },
+      include: {
+        event: true
+      }
+    });
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'Certificate not found' });
+    }
+
+    const data = certificate.certificateData as any;
+    const certificateData = {
+      recipientName: certificate.recipientName,
+      certificateType: certificate.certificateType,
+      issuedFor: certificate.issuedFor,
+      issuedDate: certificate.issuedDate.toISOString(),
+      issuedBy: certificate.issuedBy,
+      certificateNumber: data?.certificateNumber,
+      purpose: data?.purpose,
+      achievements: data?.achievements,
+      recommendations: data?.recommendations,
+      eventTitle: certificate.event?.title,
+      eventDate: certificate.event?.eventDate?.toISOString()
+    };
+
+    const pdfBuffer = await generateCertificatePDF(certificateData);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="sk-certificate-${certificate.recipientName.replace(/\s+/g, '-')}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Download SK certificate error:', error);
+    res.status(500).json({ error: 'Failed to generate certificate' });
   }
 };

@@ -20,13 +20,15 @@ async function main() {
           // Administrative
           'ADMIN_DASHBOARD', 'USER_MANAGEMENT', 'ROLE_MANAGEMENT', 'SYSTEM_SETTINGS', 'AUDIT_LOGS', 'BACKUP_MANAGEMENT', 'ANNOUNCEMENTS', 'BROADCAST_MANAGEMENT',
           // Health Services
-          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'CERTIFICATES',
+          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'MY_HEALTH_RECORDS',
           // Daycare Services
-          'DAYCARE_DASHBOARD', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS',
+          'DAYCARE_DASHBOARD', 'CHILD_REGISTRATION', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS', 'EDUCATIONAL_RESOURCES', 'DAYCARE_CERTIFICATES',
           // SK Engagement
-          'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS',
+          'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'EVENT_REGISTRATION', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS', 'MY_EVENT_REGISTRATIONS', 'SK_CERTIFICATES',
           // Reports & Analytics
-          'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'DAYCARE_REPORTS', 'SK_REPORTS', 'CROSS_MODULE_ANALYTICS', 'HEALTH_STATS'
+          'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'DAYCARE_REPORTS', 'SK_REPORTS', 'CROSS_MODULE_ANALYTICS', 'HEALTH_STATS',
+          // Public Access
+          'PUBLIC_ANNOUNCEMENTS', 'PUBLIC_EVENTS'
         ],
         isSystem: true,
         isActive: true
@@ -93,7 +95,7 @@ async function main() {
         description: 'Health services and patient care',
         permissions: [
           // Health Services
-          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'CERTIFICATES',
+          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS',
           // Reports & Analytics
           'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'HEALTH_STATS'
         ],
@@ -114,7 +116,7 @@ async function main() {
           // Administrative
           'USER_MANAGEMENT',
           // Health Services
-          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS', 'CERTIFICATES',
+          'HEALTH_DASHBOARD', 'PATIENT_MANAGEMENT', 'APPOINTMENTS', 'HEALTH_RECORDS', 'VACCINATIONS',
           // Reports & Analytics
           'REPORTS_DASHBOARD', 'HEALTH_REPORTS', 'HEALTH_STATS', 'CROSS_MODULE_ANALYTICS'
         ],
@@ -152,7 +154,7 @@ async function main() {
         description: 'Daycare teaching and student development',
         permissions: [
           // Daycare Services
-          'DAYCARE_DASHBOARD', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS', 'EDUCATIONAL_RESOURCES',
+          'DAYCARE_DASHBOARD', 'STUDENT_REGISTRATIONS', 'ATTENDANCE_TRACKING', 'PROGRESS_REPORTS', 'LEARNING_MATERIALS', 'EDUCATIONAL_RESOURCES', 'DAYCARE_CERTIFICATES',
           // Reports & Analytics
           'REPORTS_DASHBOARD', 'DAYCARE_REPORTS'
         ],
@@ -192,7 +194,7 @@ async function main() {
           // Administrative
           'USER_MANAGEMENT',
           // SK Engagement
-          'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'EVENT_REGISTRATION', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS',
+          'SK_DASHBOARD', 'EVENT_MANAGEMENT', 'EVENT_REGISTRATION', 'ATTENDANCE_ANALYTICS', 'SK_ANALYTICS', 'SK_CERTIFICATES',
           // Reports & Analytics
           'REPORTS_DASHBOARD', 'SK_REPORTS', 'CROSS_MODULE_ANALYTICS'
         ],
@@ -453,8 +455,16 @@ async function main() {
 
   // Create immunization schedule
   await Promise.all([
-    prisma.immunizationSchedule.create({
-      data: {
+    prisma.immunizationSchedule.upsert({
+      where: {
+        vaccineName_doseNumber_ageInDays: {
+          vaccineName: 'BCG',
+          doseNumber: 1,
+          ageInDays: 0
+        }
+      },
+      update: {},
+      create: {
         vaccineName: 'BCG',
         vaccineType: 'Live Attenuated',
         recommendedAge: 'Birth',
@@ -464,8 +474,16 @@ async function main() {
         description: 'Bacillus Calmette-Guérin vaccine for tuberculosis'
       }
     }),
-    prisma.immunizationSchedule.create({
-      data: {
+    prisma.immunizationSchedule.upsert({
+      where: {
+        vaccineName_doseNumber_ageInDays: {
+          vaccineName: 'Hepatitis B',
+          doseNumber: 1,
+          ageInDays: 0
+        }
+      },
+      update: {},
+      create: {
         vaccineName: 'Hepatitis B',
         vaccineType: 'Inactivated',
         recommendedAge: 'Birth',
@@ -475,8 +493,16 @@ async function main() {
         description: 'First dose of Hepatitis B vaccine'
       }
     }),
-    prisma.immunizationSchedule.create({
-      data: {
+    prisma.immunizationSchedule.upsert({
+      where: {
+        vaccineName_doseNumber_ageInDays: {
+          vaccineName: 'DPT',
+          doseNumber: 1,
+          ageInDays: 42
+        }
+      },
+      update: {},
+      create: {
         vaccineName: 'DPT',
         vaccineType: 'Inactivated',
         recommendedAge: '6 weeks',
@@ -732,8 +758,10 @@ async function main() {
 
   // Create notification settings
   await Promise.all([
-    prisma.notificationSettings.create({
-      data: {
+    prisma.notificationSettings.upsert({
+      where: { userId: users[5].id },
+      update: {},
+      create: {
         userId: users[5].id, // Parent user
         emailEnabled: true,
         smsEnabled: false,
@@ -743,8 +771,10 @@ async function main() {
         systemAnnouncements: true
       }
     }),
-    prisma.notificationSettings.create({
-      data: {
+    prisma.notificationSettings.upsert({
+      where: { userId: users[2].id },
+      update: {},
+      create: {
         userId: users[2].id, // BHW user
         emailEnabled: true,
         smsEnabled: true,

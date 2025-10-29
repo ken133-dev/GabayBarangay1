@@ -94,7 +94,6 @@ const NAVIGATION_PERMISSIONS = {
       { name: 'APPOINTMENTS', description: 'View appointment scheduling' },
       { name: 'HEALTH_RECORDS', description: 'View health records' },
       { name: 'VACCINATIONS', description: 'View vaccination tracking' },
-      { name: 'CERTIFICATES', description: 'View certificate generation' },
       { name: 'MY_HEALTH_RECORDS', description: 'View personal health records' }
     ]
   },
@@ -106,7 +105,8 @@ const NAVIGATION_PERMISSIONS = {
       { name: 'ATTENDANCE_TRACKING', description: 'View attendance tracking' },
       { name: 'PROGRESS_REPORTS', description: 'View progress reports' },
       { name: 'LEARNING_MATERIALS', description: 'View learning materials' },
-      { name: 'EDUCATIONAL_RESOURCES', description: 'View educational resources' }
+      { name: 'EDUCATIONAL_RESOURCES', description: 'View educational resources' },
+      { name: 'DAYCARE_CERTIFICATES', description: 'View daycare certificates' }
     ]
   },
   'SK Engagement': {
@@ -116,7 +116,8 @@ const NAVIGATION_PERMISSIONS = {
       { name: 'EVENT_REGISTRATION', description: 'View event registration' },
       { name: 'ATTENDANCE_ANALYTICS', description: 'View attendance analytics' },
       { name: 'SK_ANALYTICS', description: 'View SK analytics' },
-      { name: 'MY_EVENT_REGISTRATIONS', description: 'View personal event registrations' }
+      { name: 'MY_EVENT_REGISTRATIONS', description: 'View personal event registrations' },
+      { name: 'SK_CERTIFICATES', description: 'View SK event certificates' }
     ]
   },
   'Reports & Analytics': {

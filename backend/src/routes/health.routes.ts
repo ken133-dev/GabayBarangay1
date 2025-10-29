@@ -30,7 +30,8 @@ import {
   getUpcomingVaccinations,
   // Certificate Management
   createCertificate,
-  getCertificates
+  getCertificates,
+  downloadCertificate
 } from '../controllers/health.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -72,5 +73,6 @@ router.get('/vaccinations/upcoming', authenticate, getUpcomingVaccinations);
 // ========== CERTIFICATE ROUTES ==========
 router.post('/certificates', authenticate, createCertificate);
 router.get('/certificates', authenticate, getCertificates);
+router.get('/certificates/:id/download', authenticate, downloadCertificate);
 
 export default router;

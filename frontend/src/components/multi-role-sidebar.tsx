@@ -133,9 +133,7 @@ const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] =
       healthItems.push({ title: "Vaccinations", url: "/health/vaccinations" });
     }
     
-    if (hasPermission('CERTIFICATES')) {
-      healthItems.push({ title: "Certificates", url: "/health/certificates" });
-    }
+
     
     navigation.main.push({
       title: "Health Services",
@@ -177,6 +175,10 @@ const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] =
       daycareItems.push({ title: "Learning Materials", url: "/daycare/materials" });
     }
     
+    if (hasPermission('DAYCARE_CERTIFICATES')) {
+      daycareItems.push({ title: "Certificates", url: "/daycare/certificates" });
+    }
+    
     navigation.main.push({
       title: "Daycare Management",
       url: "/daycare",
@@ -189,7 +191,7 @@ const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] =
   if (hasPermission('CHILD_REGISTRATION')) {
     navigation.main.push({
       title: "Daycare Services",
-      url: "/daycare",
+      url: "/daycare/registration",
       icon: Baby,
       items: [
         { title: "Child Registration", url: "/daycare/registration" },
@@ -199,12 +201,33 @@ const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] =
     });
   }
 
+  // Educational Resources (separate access)
+  if (hasPermission('EDUCATIONAL_RESOURCES')) {
+    navigation.main.push({
+      title: "Educational Resources",
+      url: "/daycare/resources",
+      icon: BookOpen,
+    });
+  }
+
   // SK Services
-  if (hasPermission('SK_DASHBOARD')) {
-    const skItems = [{ title: "Dashboard", url: "/sk" }];
+  if (hasPermission('SK_DASHBOARD') || hasPermission('EVENT_REGISTRATION') || hasPermission('MY_EVENT_REGISTRATIONS')) {
+    const skItems = [];
+    
+    if (hasPermission('SK_DASHBOARD')) {
+      skItems.push({ title: "Dashboard", url: "/sk" });
+    }
     
     if (hasPermission('EVENT_MANAGEMENT')) {
       skItems.push({ title: "Event Management", url: "/sk/events" });
+    }
+    
+    if (hasPermission('EVENT_REGISTRATION')) {
+      skItems.push({ title: "Event Registration", url: "/sk/event-registration" });
+    }
+    
+    if (hasPermission('MY_EVENT_REGISTRATIONS')) {
+      skItems.push({ title: "My Registrations", url: "/events/my-registrations" });
     }
     
     if (hasPermission('ATTENDANCE_ANALYTICS')) {
@@ -215,24 +238,15 @@ const getMultiRoleNavigation = (userRoles: string[], userPermissions: string[] =
       skItems.push({ title: "Analytics", url: "/sk/analytics" });
     }
     
+    if (hasPermission('SK_CERTIFICATES')) {
+      skItems.push({ title: "Certificates", url: "/sk/certificates" });
+    }
+    
     navigation.main.push({
       title: "SK Engagement",
-      url: "/sk",
+      url: hasPermission('SK_DASHBOARD') ? "/sk" : (hasPermission('EVENT_REGISTRATION') ? "/sk/event-registration" : "/events/my-registrations"),
       icon: PartyPopper,
       items: skItems,
-    });
-  }
-
-  // Event Registration (for residents)
-  if (hasPermission('EVENT_REGISTRATION')) {
-    navigation.main.push({
-      title: "Events",
-      url: "/events",
-      icon: Calendar,
-      items: [
-        { title: "Event Registration", url: "/sk/event-registration" },
-        { title: "My Registrations", url: "/events/my-registrations" },
-      ],
     });
   }
 
